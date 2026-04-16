@@ -424,7 +424,7 @@ function OptimizerPage(){
 }
 
 // ═══ MODULE 5: HISTORICAL ═══
-function HistoryPage({setPage}){
+function HistoryPage({setPage,navToSurcharges}){
   const[trendFilter,setTrendFilter]=useState("all");const[portTab,setPortTab]=useState("pol");
   const monthlyCost=useMemo(()=>{if(trendFilter==="all")return BASE.monthlyCost;return BASE.monthlyCost.map(m=>trendFilter==="origin"?{...m,detention:m.oDetention,demurrage:m.oDemurrage,storage:m.oStorage,combined:m.oCombined}:{...m,detention:m.dDetention,demurrage:m.dDemurrage,storage:m.dStorage,combined:m.dCombined});},[trendFilter]);
   const stageData=useMemo(()=>[
@@ -471,20 +471,47 @@ function HistoryPage({setPage}){
       <tbody>{(portTab==="pol"?polData:podData).map((p,i)=>{const r=p.score>8?{t:"High",c:T.red}:p.score>5?{t:"Monitor",c:T.amber}:{t:"OK",c:T.green};return <tr key={i} style={{background:T.card2}}><td style={{padding:"6px 7px",borderRadius:"6px 0 0 6px",fontWeight:600,fontFamily:"monospace"}}>{p.port}</td><td style={{padding:"6px 7px",color:T.sub,textAlign:"right"}}>{p.containers}</td><td style={{padding:"6px 7px",color:T.amber,fontWeight:700}}>{(portTab==="pol"?p.avgODet:p.avgDDem)+"d"}</td><td style={{padding:"6px 7px",color:T.purple,fontWeight:700}}>{(portTab==="pol"?p.avgODem:p.avgDDet)+"d"}</td><td style={{padding:"6px 7px",fontWeight:700}}>{p.totalDwell}d</td><td style={{padding:"6px 7px",fontWeight:700,textAlign:"right",color:p.score>8?T.red:p.score>5?T.amber:T.green}}>{p.score}</td><td style={{padding:"6px 7px",borderRadius:"0 6px 6px 0"}}><SolidBadge color={r.c}>{r.t}</SolidBadge></td></tr>;})}</tbody></table>
     </Card>
     <div style={{marginTop:14}}>
-      <SH title="Top Lane Performance" sub="Cost per container with freight vs surcharge split. Lanes with D&D >35% are flagged."/>
-      <ChartBox title="Freight vs D&D Surcharge Split by Lane" sub="Blue = base freight. Red = D&D surcharge component." h={220} insight={"CNSHA-NLRTM has 45% surcharge ratio — nearly half the lane cost is avoidable D&D. Review carrier terms on this route."} nav={<NavLink text="Negotiate better terms → Surcharges" onClick={()=>setPage("surcharges")}/>}><ResponsiveContainer><BarChart data={lanes.slice(0,10).map(l=>{const fp=l.freightPct||65;const sp=l.surchargePct||35;return{lane:l.lane,Freight:Math.round(l.costPerContainer*fp/100),"D&D Surcharge":Math.round(l.costPerContainer*sp/100)};})} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"} vertical={false}/><XAxis type="number" stroke={T.dim} fontSize={10} tickFormatter={v=>"$"+v}/><YAxis type="category" dataKey="lane" width={100} stroke={T.dim} fontSize={9}/><Tooltip content={<CTip/>}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/><Bar dataKey="Freight" stackId="l" fill={T.blue} name="Base Freight"/><Bar dataKey="D&D Surcharge" stackId="l" fill={T.red} name="D&D Surcharge" radius={[0,3,3,0]}/></BarChart></ResponsiveContainer></ChartBox>
+      <SH title="Top Lane Performance" sub="Cost per container with freight vs surcharge split. Lanes with D&D >35% are flagged. Click any lane row to open its negotiation analysis in Surcharges."/>
+      <ChartBox title="Freight vs D&D Surcharge Split by Lane" sub="Blue = base freight. Red = D&D surcharge component." h={220} insight={"CNSHA-NLRTM has 45% surcharge ratio — nearly half the lane cost is avoidable D&D. Review carrier terms on this route."} nav={<NavLink text="Negotiate better terms → Surcharges" onClick={()=>navToSurcharges(null)}/>}><ResponsiveContainer><BarChart data={lanes.slice(0,10).map(l=>{const fp=l.freightPct||65;const sp=l.surchargePct||35;return{lane:l.lane,Freight:Math.round(l.costPerContainer*fp/100),"D&D Surcharge":Math.round(l.costPerContainer*sp/100)};})} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"} vertical={false}/><XAxis type="number" stroke={T.dim} fontSize={10} tickFormatter={v=>"$"+v}/><YAxis type="category" dataKey="lane" width={100} stroke={T.dim} fontSize={9}/><Tooltip content={<CTip/>}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/><Bar dataKey="Freight" stackId="l" fill={T.blue} name="Base Freight"/><Bar dataKey="D&D Surcharge" stackId="l" fill={T.red} name="D&D Surcharge" radius={[0,3,3,0]}/></BarChart></ResponsiveContainer></ChartBox>
       <Card style={{marginTop:8}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:11}}><thead><tr style={{color:T.dim,fontSize:10,textAlign:"left"}}>{["Lane","Vol","O.Det","O.Dem","D.Dem","D.Det","Total","BFP","$/Container","Dwell Score"].map(h=><th key={h} style={{padding:"5px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","$/Container","Dwell Score"].includes(h)?"right":"left"}}>{h}{h==="BFP"&&<HoverTip text={"Days Beyond Free Period. Total dwell minus 9.9d combined FP."}/>}{h==="Dwell Score"&&<HoverTip text={"High: total dwell > 15d. Med: > 10d. Low: ≤ 10d."}/>}</th>)}</tr></thead>
-        <tbody>{lanes.map((l,i)=>{const rk=l.totalDwell>15?"High":l.totalDwell>10?"Med":"Low";const rc=rk==="High"?T.red:rk==="Med"?T.amber:T.green;const sFlag=(l.surchargePct||35)>35;return <tr key={i} style={{background:sFlag?T.redBg+"60":T.card2}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600,fontFamily:"monospace",fontSize:10}}>{l.lane}{sFlag&&<span style={{fontSize:9,color:T.red,marginLeft:4}}>{"D&D>"+(l.surchargePct||35)+"%"}</span>}</td><td style={{padding:"7px",color:T.sub,textAlign:"right"}}>{l.containers}</td><td style={{padding:"7px",color:T.amber,fontWeight:700}}>{l.avgODet.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:700}}>{l.avgODem.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:700}}>{l.avgDDem.toFixed(1)}d</td><td style={{padding:"7px",color:T.red,fontWeight:700}}>{l.avgDDet.toFixed(1)}d</td><td style={{padding:"7px",fontWeight:600}}>{l.totalDwell.toFixed(1)}d</td><td style={{padding:"7px",color:l.beyondFP>0?T.red:T.green,fontWeight:600}}>{l.beyondFP}d</td><td style={{padding:"7px",fontWeight:700,textAlign:"right",color:l.costPerContainer>500?T.red:l.costPerContainer>200?T.amber:T.green}}>{"$"+l.costPerContainer}</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{rk}</SolidBadge></td></tr>;})}</tbody></table></Card>
+        <tbody>{lanes.map((l,i)=>{const rk=l.totalDwell>15?"High":l.totalDwell>10?"Med":"Low";const rc=rk==="High"?T.red:rk==="Med"?T.amber:T.green;const sFlag=(l.surchargePct||35)>35;return <tr key={i} onClick={()=>navToSurcharges(l)} style={{background:sFlag?T.redBg+"60":T.card2,cursor:"pointer",transition:"filter .15s"}} onMouseEnter={e=>e.currentTarget.style.filter="brightness(0.96)"} onMouseLeave={e=>e.currentTarget.style.filter=""}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600,fontFamily:"monospace",fontSize:10}}>{l.lane}{sFlag&&<span style={{fontSize:9,color:T.red,marginLeft:4}}>{"D&D>"+(l.surchargePct||35)+"%"}</span>}</td><td style={{padding:"7px",color:T.sub,textAlign:"right"}}>{l.containers}</td><td style={{padding:"7px",color:T.amber,fontWeight:700}}>{l.avgODet.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:700}}>{l.avgODem.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:700}}>{l.avgDDem.toFixed(1)}d</td><td style={{padding:"7px",color:T.red,fontWeight:700}}>{l.avgDDet.toFixed(1)}d</td><td style={{padding:"7px",fontWeight:600}}>{l.totalDwell.toFixed(1)}d</td><td style={{padding:"7px",color:l.beyondFP>0?T.red:T.green,fontWeight:600}}>{l.beyondFP}d</td><td style={{padding:"7px",fontWeight:700,textAlign:"right",color:l.costPerContainer>500?T.red:l.costPerContainer>200?T.amber:T.green}}>{"$"+l.costPerContainer}</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:4}}><SolidBadge color={rc}>{rk}</SolidBadge><span style={{fontSize:9,color:T.blueL,fontWeight:600,whiteSpace:"nowrap"}}>Negotiate →</span></div></td></tr>;})}</tbody></table></Card>
     </div>
   </div>);
 }
 
 // ═══ MODULE 6: SURCHARGES ═══
-function SurchargePage({setPage}){
+function SurchargePage({setPage,selectedLane,clearLane}){
   const cats=[{name:"Detention — Origin",side:"Origin",total:49169,containers:261,avgFP:5.1,color:T.amber},{name:"Detention — Dest",side:"Dest",total:1955,containers:8,avgFP:6.0,color:T.amber},{name:"Demurrage — Origin",side:"Origin",total:22353,containers:52,avgFP:3.1,color:T.purple},{name:"Demurrage — Dest",side:"Dest",total:5144,containers:12,avgFP:3.0,color:T.purple},{name:"Storage — Origin",side:"Origin",total:3075,containers:23,avgFP:3.1,color:T.green},{name:"Storage — Dest",side:"Dest",total:1295,containers:9,avgFP:3.0,color:T.green},{name:"Combined — Origin",side:"Origin",total:99565,containers:212,avgFP:9.9,color:T.red},{name:"Combined — Dest",side:"Dest",total:1814,containers:4,avgFP:12.0,color:T.red}];
   const detO=49169,demO=22353,dndO=99565,detD=1955,demD=5144,dndD=1814;
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <SH title="Surcharge Intelligence" sub="Evaluate rate structure effectiveness and build data-backed negotiation positions."/>
+    {selectedLane&&<Card style={{marginBottom:18,borderLeft:"4px solid "+T.blue,background:T.blueBg}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+            <span style={{fontSize:15,fontWeight:700,fontFamily:"monospace",color:T.text}}>{selectedLane.lane}</span>
+            <Badge color={T.blue}>{selectedLane.containers} containers</Badge>
+            {(selectedLane.surchargePct||35)>35&&<SolidBadge color={T.red}>{"D&D "+(selectedLane.surchargePct||35)+"% of cost"}</SolidBadge>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:10}}>
+            {[{l:"O. Detention",v:selectedLane.avgODet.toFixed(1)+"d",c:T.amber,fp:"5.1d free"},{l:"O. Demurrage",v:selectedLane.avgODem.toFixed(1)+"d",c:T.purple,fp:"3.1d free"},{l:"D. Demurrage",v:selectedLane.avgDDem.toFixed(1)+"d",c:T.purple,fp:"3.0d free"},{l:"D. Detention",v:selectedLane.avgDDet.toFixed(1)+"d",c:T.amber,fp:"6.0d free"},{l:"$/Container",v:"$"+selectedLane.costPerContainer,c:selectedLane.costPerContainer>500?T.red:T.amber,fp:selectedLane.beyondFP+"d beyond FP"}].map(x=><div key={x.l} style={{background:"#fff",borderRadius:8,padding:"8px 10px",borderTop:"2px solid "+x.c}}><div style={{fontSize:9,color:T.sub}}>{x.l}</div><div style={{fontSize:15,fontWeight:700,color:x.c}}>{x.v}</div><div style={{fontSize:9,color:T.dim}}>{x.fp}</div></div>)}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <div style={{background:"#fff",borderRadius:8,padding:"8px 12px"}}>
+              <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4}}>Freight vs Surcharge Split</div>
+              <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:4}}><div style={{width:(selectedLane.freightPct||65)+"%",background:T.blue}}/><div style={{width:(selectedLane.surchargePct||35)+"%",background:T.red}}/></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10}}><span style={{color:T.blue,fontWeight:600}}>{(selectedLane.freightPct||65)+"% Base Freight"}</span><span style={{color:T.red,fontWeight:600}}>{(selectedLane.surchargePct||35)+"% D&D Surcharge"}</span></div>
+            </div>
+            <div style={{background:"#fff",borderRadius:8,padding:"8px 12px"}}>
+              <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4}}>Negotiation Position</div>
+              <div style={{fontSize:11,color:T.text,lineHeight:1.5}}>{selectedLane.beyondFP>0?"Average dwell exceeds free period by "+selectedLane.beyondFP+"d. Request "+Math.ceil(selectedLane.beyondFP+1)+" additional free days in next contract renewal.":"Dwell within free period. Focus on surcharge % reduction if above 35%."}</div>
+            </div>
+          </div>
+        </div>
+        <button onClick={clearLane} style={{background:"none",border:"none",cursor:"pointer",marginLeft:12,padding:4}}><X size={16} color={T.dim}/></button>
+      </div>
+      <NavLink text="← Back to Lane Performance" onClick={()=>{clearLane();setPage("history");}}/>
+    </Card>}
     <ChartBox title="Surcharge Costs by Category" sub="Compare all 8 surcharge buckets to identify the largest" h={280}><ResponsiveContainer><BarChart data={cats} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"} vertical={false}/><XAxis type="number" stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><YAxis type="category" dataKey="name" stroke={T.dim} fontSize={9} width={160}/><Tooltip formatter={v=>fmt(v)}/><Bar dataKey="total" name="Total" radius={[0,4,4,0]}>{cats.map((c,i)=><Cell key={i} fill={c.color}/>)}</Bar></BarChart></ResponsiveContainer></ChartBox>
     <Card style={{marginTop:12}}>
       <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Detailed Surcharge Table</div><div style={{fontSize:11,color:T.sub,marginBottom:8}}>Per-container cost by surcharge type. Higher $/container = higher priority for action.</div>
@@ -510,6 +537,8 @@ function SurchargePage({setPage}){
 // ═══ MAIN APP ═══
 export default function App(){
   const[page,setPage]=useState("home");
+  const[selectedLane,setSelectedLane]=useState(null);
+  const navToSurcharges=(lane)=>{setSelectedLane(lane);setPage("surcharges");};
   return (<div style={{background:T.bg,minHeight:"100vh",fontFamily:"'Roboto','Arial',sans-serif",color:T.text}}>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet"/>
     <TopNav page={page} setPage={setPage}/>
@@ -518,8 +547,8 @@ export default function App(){
       {page==="costs"&&<CostPage setPage={setPage}/>}
       {page==="carriers"&&<CarrierPage setPage={setPage}/>}
       {page==="optimizer"&&<OptimizerPage/>}
-      {page==="history"&&<HistoryPage setPage={setPage}/>}
-      {page==="surcharges"&&<SurchargePage setPage={setPage}/>}
+      {page==="history"&&<HistoryPage setPage={setPage} navToSurcharges={navToSurcharges}/>}
+      {page==="surcharges"&&<SurchargePage setPage={setPage} selectedLane={selectedLane} clearLane={()=>setSelectedLane(null)}/>}
     </div>
   </div>);
 }
