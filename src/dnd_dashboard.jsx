@@ -106,7 +106,7 @@ function HomePage({setPage}){
     {/* JOURNEY */}
     <Card style={{padding:18,marginBottom:18,background:"#FEFCE808"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-        <div><div style={{fontSize:14,fontWeight:600}}>Container D&D Cost Journey</div><div style={{fontSize:9,color:T.sub}}>Where in the lifecycle are costs accumulating? Focus on stages with highest "with cost" counts.</div></div>
+        <div><div style={{fontSize:14,fontWeight:600}}>Container D&D Cost Journey</div><div style={{fontSize:9,color:T.sub}}>Where in the lifecycle are costs accumulating? Focus on stages with highest "missing" counts — these are your data blind spots.</div></div>
         <Badge color={T.cyan}>{"Milestone completeness: "+milestonePct+"%"}</Badge>
       </div>
       {[{label:"ORIGIN",bg:T.amberBg,lc:T.amber,nodes:[
@@ -129,7 +129,7 @@ function HomePage({setPage}){
               <div style={{fontSize:16,fontWeight:700,margin:"4px 0"}}>{n.actual.toLocaleString()}</div>
               <div style={{display:"flex",gap:4,justifyContent:"center",flexWrap:"wrap"}}>
                 {n.missing>0&&<span style={{fontSize:9,color:T.amber,background:T.amberBg,padding:"1px 5px",borderRadius:4}}>{n.missing+" missing"}</span>}
-                {n.incurred>0&&<HoverTip text={"These "+n.incurred+" containers completed a later milestone but this one is missing. D&D cost is already being charged for the gap period."}/>}
+                {n.incurred>0&&<HoverTip text={"These "+n.incurred+" containers have this milestone recorded but the next milestone is absent — they are confirmed at this stage with cost already running. Containers with missing milestones cannot have cost attributed."}/>}
                 {n.incurred>0&&<span style={{fontSize:9,color:T.red,background:T.redBg,padding:"1px 5px",borderRadius:4,fontWeight:600}}>{n.incurred+" with cost"}</span>}
               </div>
             </div>)}
@@ -163,7 +163,7 @@ function HomePage({setPage}){
       <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Why You're Paying</div>
       <div style={{fontSize:11,color:T.sub,marginBottom:10}}>Root causes inferred from container data patterns. For confirmed reasons, enable reason tagging on surcharges.</div>
       {(()=>{const worstCarrier=Object.entries(BASE.carriers).reduce((a,[n,d])=>d.avgODet>a[1].avgODet?[n,d]:a,["",{avgODet:0}]);const wName=worstCarrier[0];const wData=worstCarrier[1];const portfolioAvgDet=Object.values(BASE.carriers).reduce((s,d)=>s+d.avgODet*d.containers,0)/Object.values(BASE.carriers).reduce((s,d)=>s+d.containers,0);const sepTotal=cm.detention_origin.total+cm.demurrage_origin.total;const combPrem=sepTotal>0?Math.round((cm.dnd_origin.total-sepTotal)/sepTotal*100):0;const goeIncurred=BASE.stageIncurred.gateOutEmpty;return[
-        {pattern:goeIncurred+" containers at Gate Out Empty have cost but milestone is missing",cause:"Documentation or depot scheduling delay",impact:"~"+fmt(cm.detention_origin.total)+" origin detention",action:"Verify documentation readiness before dispatch",c:T.amber},
+        {pattern:goeIncurred+" containers stuck at Gate Out Empty — Gate In POL not yet recorded",cause:"Documentation or depot scheduling delay holding containers at origin",impact:"~"+fmt(cm.detention_origin.total)+" origin detention already accruing",action:"Verify documentation readiness before dispatch",c:T.amber},
         {pattern:wName+" containers average "+wData.avgODet.toFixed(1)+"d origin dwell vs portfolio "+portfolioAvgDet.toFixed(1)+"d",cause:"Carrier equipment availability or scheduling",impact:"Across "+wData.containers+" containers",action:"Raise in "+wName+" QBR — see Carrier Intel",c:T.purple},
         {pattern:"Combined D&D rate at origin costs "+combPrem+"% more than separate",cause:"Rate structure misalignment",impact:"~"+fmt(cm.dnd_origin.total-sepTotal)+" premium vs separate rates",action:"Evaluate switching — see Surcharges",c:T.red},
         {pattern:totalMissing+" missing milestones across portfolio ("+milestonePct+"% complete)",cause:"Tracking data gaps masking true cost",impact:"Unknown — could be significant",action:"Prioritize milestone data completeness with carriers",c:T.dim}]})()
@@ -214,11 +214,6 @@ function CostPage({setPage}){
   const pieData=COST_CATS.map(c=>({name:c.name,value:cm[c.oKey].total+cm[c.dKey].total,color:c.color})).filter(d=>d.value>0);
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <SH title="Cost Overview" sub="Where exactly is the money going? Drill into category, side, and distribution."/>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:18}}>
-      <Card style={{padding:12}}><div style={{fontSize:9,color:T.sub,textTransform:"uppercase",letterSpacing:.8}}>Grand Total</div><div style={{fontSize:22,fontWeight:800,color:T.text}}>{fmt(BASE.grandTotal)}</div></Card>
-      <Card style={{padding:12}}><div style={{fontSize:9,color:T.sub,textTransform:"uppercase",letterSpacing:.8}}>Origin</div><div style={{fontSize:18,fontWeight:700,color:T.amber}}>{fmt(BASE.totalOriginCost)}</div><div style={{fontSize:10}}><span style={{color:momO.color,fontWeight:600}}>{momO.arrow+" "+Math.abs(momO.v)+"% MoM"}</span><span style={{color:T.sub}}>{" | "+Math.round(BASE.totalOriginCost/BASE.grandTotal*100)+"% of total"}</span></div></Card>
-      <Card style={{padding:12}}><div style={{fontSize:9,color:T.sub,textTransform:"uppercase",letterSpacing:.8}}>Destination</div><div style={{fontSize:18,fontWeight:700,color:T.purple}}>{fmt(BASE.totalDestCost)}</div><div style={{fontSize:10}}><span style={{color:momD.color,fontWeight:600}}>{momD.arrow+" "+Math.abs(momD.v)+"% MoM"}</span><span style={{color:T.sub}}>{" | "+Math.round(BASE.totalDestCost/BASE.grandTotal*100)+"% of total"}</span></div></Card>
-    </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
       <ChartBox title="Origin vs Destination by Category" sub="Compare which category has the biggest origin-to-destination gap" h={220} insight={(()=>{const maxCat=COST_CATS.reduce((a,cat)=>{const t=cm[cat.oKey].total+cm[cat.dKey].total;return t>a.total?{name:cat.name,total:t,oTotal:cm[cat.oKey].total}:a;},{name:"",total:0,oTotal:0});return maxCat.name+" ("+fmt(maxCat.total)+") is the largest category at "+Math.round(maxCat.total/BASE.grandTotal*100)+"% of total. Origin accounts for "+fmt(maxCat.oTotal)+" ("+Math.round(maxCat.oTotal/Math.max(1,maxCat.total)*100)+"%).";})()} nav={<NavLink text="See which carriers drive this → Carrier Intel" onClick={()=>setPage("carriers")}/>}><ResponsiveContainer><BarChart data={barData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis type="number" stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><YAxis type="category" dataKey="name" stroke={T.dim} fontSize={10} width={80}/><Tooltip content={<CTip/>}/><Bar dataKey="Origin" fill={T.amber} radius={[0,3,3,0]}/><Bar dataKey="Dest" fill={T.purple} radius={[0,3,3,0]}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></BarChart></ResponsiveContainer></ChartBox>
       <ChartBox title="Cost Distribution" sub="Proportional share of each charge type in total cost" h={220}><ResponsiveContainer><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={85} dataKey="value" paddingAngle={2}>{pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip formatter={v=>fmt(v)}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></PieChart></ResponsiveContainer></ChartBox>
