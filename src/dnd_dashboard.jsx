@@ -129,8 +129,6 @@ function HomePage({setPage}){
               <div style={{fontSize:16,fontWeight:700,margin:"4px 0"}}>{n.actual.toLocaleString()}</div>
               <div style={{display:"flex",gap:4,justifyContent:"center",flexWrap:"wrap"}}>
                 {n.missing>0&&<span style={{fontSize:9,color:T.amber,background:T.amberBg,padding:"1px 5px",borderRadius:4}}>{n.missing+" missing"}</span>}
-                {n.incurred>0&&<HoverTip text={"These "+n.incurred+" containers have this milestone recorded but the next milestone is absent — they are confirmed at this stage with cost already running. Containers with missing milestones cannot have cost attributed."}/>}
-                {n.incurred>0&&<span style={{fontSize:9,color:T.red,background:T.redBg,padding:"1px 5px",borderRadius:4,fontWeight:600}}>{n.incurred+" with cost"}</span>}
               </div>
             </div>)}
           </div>
