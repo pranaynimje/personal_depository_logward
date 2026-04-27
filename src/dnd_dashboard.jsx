@@ -50,7 +50,6 @@ const T={bg:"#F8F9FC",page:"#ffffff",card:"#ffffff",card2:"#F8F9FC",border:"#E8E
 const fmt=n=>n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(1)+"K":"$"+Math.round(n);
 const momPct=(c,p)=>{const v=p>0?Math.round((c-p)/p*100):0;return{v,color:v>0?T.red:v<0?T.green:T.sub,arrow:v>0?"↑":v<0?"↓":"→"};};
 const catColor=c=>c==="Detention"?T.amber:c==="Demurrage"?T.purple:c==="Storage"?T.green:T.red;
-const inferReason=c=>c.oDet>50?"Extended origin dwell — review carrier equipment return":c.oDet>10?"Origin depot delay — likely documentation or scheduling":c.stage==="Gate Out POD"?"Destination clearance — check customs or truck availability":c.stage==="Discharge POD"?"Destination port dwell — check customs status":"Within normal parameters";
 
 // ═══ SHARED UI (Upgraded) ═══
 const SolidBadge=({children,color=T.red})=><span style={{background:color,color:"#fff",padding:"3px 11px",borderRadius:20,fontSize:11,fontWeight:600,whiteSpace:"nowrap",boxShadow:"0 1px 3px "+color+"30"}}>{children}</span>;
@@ -76,8 +75,6 @@ function HomePage({setPage}){
   const storagePct=Math.round((cm.storage_origin.total+cm.storage_destination.total)/BASE.grandTotal*100);
   const originPct=Math.round(BASE.totalOriginCost/BASE.grandTotal*100);
   const topBurn=CDATA.topRisk.slice(0,5).reduce((s,c)=>s+Math.round((c.cost3d-c.cost)/3),0);
-  const totalMissing=Object.values(BASE.missingMilestones).reduce((a,b)=>a+b,0);
-  const milestonePct=Math.round((1-totalMissing/(BASE.summary.totalContainers*6))*100);
 
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     {/* HERO ROW: Main metric + Alert panel */}
@@ -106,8 +103,7 @@ function HomePage({setPage}){
     {/* JOURNEY */}
     <Card style={{padding:18,marginBottom:18,background:"#FEFCE808"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-        <div><div style={{fontSize:14,fontWeight:600}}>Container D&D Cost Journey</div><div style={{fontSize:9,color:T.sub}}>Where in the lifecycle are costs accumulating? Focus on stages with highest "missing" counts — these are your data blind spots.</div></div>
-        <Badge color={T.cyan}>{"Milestone completeness: "+milestonePct+"%"}</Badge>
+        <div><div style={{fontSize:14,fontWeight:600}}>Container D&D Cost Journey</div><div style={{fontSize:9,color:T.sub}}>Cost incurred at each stage of the container lifecycle.</div></div>
       </div>
       {[{label:"ORIGIN",bg:T.amberBg,lc:T.amber,nodes:[
           {label:"Gate Out Empty",sub:"Depot",icon:Box,color:T.amber,actual:st.gateOutEmpty_actual,missing:BASE.missingMilestones.gateOutEmpty,incurred:BASE.stageIncurred.gateOutEmpty},
@@ -124,12 +120,11 @@ function HomePage({setPage}){
         <div style={{background:sec.bg+"80",border:"none",borderRadius:14,padding:"16px 14px 12px",marginBottom:si===0?6:0,position:"relative"}}>
           <div style={{position:"absolute",top:7,left:12,fontSize:9,fontWeight:700,color:sec.lc,textTransform:"uppercase",letterSpacing:1}}>{sec.label}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginTop:14}}>
-            {sec.nodes.map((n,i)=><div key={i} style={{background:"#fff",border:"1px solid "+(n.incurred>100?T.red+"40":T.border+"80"),borderRadius:12,padding:"12px 10px",textAlign:"center",borderWidth:1}}>
+            {sec.nodes.map((n,i)=><div key={i} style={{background:"#fff",border:"1px solid "+(n.incurred>100?T.red+"40":T.border+"80"),borderRadius:12,padding:"12px 10px",textAlign:"center",borderWidth:1,position:"relative"}}>
+              {n.missing>0&&<div title={n.missing+" containers missing this milestone — tracking data not received"} style={{position:"absolute",top:6,right:8,cursor:"help",fontSize:11,color:T.amber}}>{"⚠"}</div>}
               <n.icon size={14} color={n.color} style={{marginBottom:2}}/><div style={{fontSize:11,fontWeight:700}}>{n.label}</div><div style={{fontSize:10,color:T.dim}}>{n.sub}</div>
-              <div style={{fontSize:16,fontWeight:700,margin:"4px 0"}}>{n.actual.toLocaleString()}</div>
-              <div style={{display:"flex",gap:4,justifyContent:"center",flexWrap:"wrap"}}>
-                {n.missing>0&&<span style={{fontSize:9,color:T.amber,background:T.amberBg,padding:"1px 5px",borderRadius:4}}>{n.missing+" missing"}</span>}
-              </div>
+              <div style={{fontSize:9,color:T.sub,marginTop:4}}>Cost Incurred</div>
+              <div style={{fontSize:16,fontWeight:700,margin:"2px 0",color:n.incurred>100?T.red:T.text}}>{fmt(n.incurred)}</div>
             </div>)}
           </div>
         </div>
@@ -155,28 +150,13 @@ function HomePage({setPage}){
       </Card>
     </div>
     <div style={{height:1,background:T.border+"40",margin:"6px 0 14px"}}/>
-    {/* WHY YOU'RE PAYING */}
-    <Card style={{marginBottom:14,borderLeft:"3px solid "+T.red+"70",background:"#FFF5F5"}}>
-      <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Why You're Paying</div>
-      <div style={{fontSize:11,color:T.sub,marginBottom:10}}>Root causes inferred from container data patterns. For confirmed reasons, enable reason tagging on surcharges.</div>
-      {(()=>{const worstCarrier=Object.entries(BASE.carriers).reduce((a,[n,d])=>d.avgODet>a[1].avgODet?[n,d]:a,["",{avgODet:0}]);const wName=worstCarrier[0];const wData=worstCarrier[1];const portfolioAvgDet=Object.values(BASE.carriers).reduce((s,d)=>s+d.avgODet*d.containers,0)/Object.values(BASE.carriers).reduce((s,d)=>s+d.containers,0);const sepTotal=cm.detention_origin.total+cm.demurrage_origin.total;const combPrem=sepTotal>0?Math.round((cm.dnd_origin.total-sepTotal)/sepTotal*100):0;const goeIncurred=BASE.stageIncurred.gateOutEmpty;return[
-        {pattern:goeIncurred+" containers stuck at Gate Out Empty — Gate In POL not yet recorded",cause:"Documentation or depot scheduling delay holding containers at origin",impact:"~"+fmt(cm.detention_origin.total)+" origin detention already accruing",action:"Verify documentation readiness before dispatch",c:T.amber},
-        {pattern:wName+" containers average "+wData.avgODet.toFixed(1)+"d origin dwell vs portfolio "+portfolioAvgDet.toFixed(1)+"d",cause:"Carrier equipment availability or scheduling",impact:"Across "+wData.containers+" containers",action:"Raise in "+wName+" QBR — see Carrier Intel",c:T.purple},
-        {pattern:"Combined D&D rate at origin costs "+combPrem+"% more than separate",cause:"Rate structure misalignment",impact:"~"+fmt(cm.dnd_origin.total-sepTotal)+" premium vs separate rates",action:"Evaluate switching — see Surcharges",c:T.red},
-        {pattern:totalMissing+" missing milestones across portfolio ("+milestonePct+"% complete)",cause:"Tracking data gaps masking true cost",impact:"Unknown — could be significant",action:"Prioritize milestone data completeness with carriers",c:T.dim}]})()
-      .map((r,i)=><div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:i<3?"1px solid "+T.border+"80":"none"}}>
-        <div style={{width:4,borderRadius:2,background:r.c,flexShrink:0}}/>
-        <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:T.text}}>{r.pattern}</div><div style={{fontSize:11,color:T.sub,lineHeight:1.4}}>{"Probable cause: "+r.cause+" | Impact: "+r.impact}</div><div style={{fontSize:11,color:r.c,fontWeight:600}}>{"Action: "+r.action}</div></div>
-      </div>)}
-    </Card>
-    <div style={{height:1,background:T.border+"40",margin:"6px 0 14px"}}/>
     {/* INSIGHTS */}
     <SH title="Operational Insights" sub="Click any insight to navigate to the relevant module"/>
     <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:18}}>
       {(()=>{const detFP=cm.detention_origin.avgFP;const detAvg=sd.origin_detention.avg;const detUtil=Math.round(detAvg/detFP*100);const sepT=cm.detention_origin.total+cm.demurrage_origin.total;const combPrem=sepT>0?Math.round((cm.dnd_origin.total-sepT)/sepT*100):0;const wc=Object.entries(BASE.carriers).reduce((a,[n,d])=>d.avgODet>a[1].avgODet?[n,d]:a,["",{avgODet:0,containers:0,missingMilestones:0}]);const pavg=Object.values(BASE.carriers).reduce((s,d)=>s+d.avgODet*d.containers,0)/Math.max(1,Object.values(BASE.carriers).reduce((s,d)=>s+d.containers,0));return[
         {icon:AlertTriangle,color:T.red,nav:"optimizer",title:"Origin = "+originPct+"% of total D&D ("+fmt(BASE.totalOriginCost)+")",because:"Avg detention dwell is "+detAvg+"d against "+detFP+"d free — "+detUtil+"% utilization",action:"Prioritize expired origin containers in Cost Optimizer"},
         {icon:Clock,color:T.red,nav:"optimizer",title:fth.red+" containers breach free time within 48 hours",because:"These move from zero-cost to paid tiers immediately upon expiry",action:"Filter Cost Optimizer to Free Period = Expiring 48h"},
-        {icon:Ship,color:T.amber,nav:"carriers",title:wc[0]+": "+wc[1].avgODet.toFixed(1)+"d avg origin dwell vs portfolio "+pavg.toFixed(1)+"d",because:"Consistent outlier across "+wc[1].containers+" containers with "+wc[1].missingMilestones+" missing milestones",action:"Prepare data-driven QBR discussion in Carrier Intel"}]})().map((ins,i)=><Card key={i} onClick={ins.nav?()=>setPage(ins.nav):undefined} style={{borderLeft:"3px solid "+ins.color,padding:"10px 14px",cursor:ins.nav?"pointer":"default"}}>
+        {icon:Ship,color:T.amber,nav:"carriers",title:wc[0]+": "+wc[1].avgODet.toFixed(1)+"d avg origin dwell vs portfolio "+pavg.toFixed(1)+"d",because:"Consistent outlier across "+wc[1].containers+" containers",action:"Prepare data-driven QBR discussion in Carrier Intel"}]})().map((ins,i)=><Card key={i} onClick={ins.nav?()=>setPage(ins.nav):undefined} style={{borderLeft:"3px solid "+ins.color,padding:"10px 14px",cursor:ins.nav?"pointer":"default"}}>
         <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:2}}><ins.icon size={13} color={ins.color}/><span style={{fontSize:13,fontWeight:600}}>{ins.title}</span>{ins.nav&&<span style={{marginLeft:"auto",fontSize:9,color:T.blueL,fontWeight:600}}>{"View →"}</span>}</div>
         <div style={{paddingLeft:20,fontSize:11,color:T.sub,lineHeight:1.4}}>{"Because: "+ins.because}</div>
         <div style={{paddingLeft:20,fontSize:11,color:ins.color,fontWeight:600}}>{"Action: "+ins.action}</div>
@@ -406,7 +386,7 @@ function OptimizerPage(){
     const lane=c.po+"-"+c.pd;
     const costBand=todayCost>3000?"High Impact":todayCost>1000?"Medium":"Low";
     const riskLevel=c.risk>=75?"High":c.risk>=50?"Medium":"Low";
-    return{...c,daily,todayCost,sav3d:d3,sav7d:d7,fpStatus,side,lane,costBand,riskLevel,reason:inferReason(c)};
+    return{...c,daily,todayCost,sav3d:d3,sav7d:d7,fpStatus,side,lane,costBand,riskLevel};
   }).sort((a,b)=>b.todayCost-a.todayCost),[predDays]);
 
   const filterOpts=useMemo(()=>({pols:[...new Set(allContainers.map(c=>c.po))].sort(),pods:[...new Set(allContainers.map(c=>c.pd))].sort(),carriers:[...new Set(allContainers.map(c=>c.ca))].sort()}),[allContainers]);
