@@ -285,15 +285,20 @@ function CostPage({setPage}){
 
 // ═══ MODULE 3: CARRIER INTEL ═══
 const CARRIER_VIEWS=[
-  {id:"detention", label:"Detention"},
-  {id:"demurrage", label:"Demurrage"},
-  {id:"storage",   label:"Storage"},
-  {id:"combined",  label:"Combined D&D"},
+  {id:"scatter",   label:"Avg Dwell Days"},
+  {id:"exceeding", label:"Containers Exceeding Free Days"},
+  {id:"cost",      label:"Cost Exposure"},
+];
+const SCATTER_CATS=[
+  {id:"detention",label:"Detention",  xKey:"avgODet",yKey:"avgDDet",fpX:5.1,fpY:6.0,xLabel:"Origin Det (days)",yLabel:"Dest Det (days)",color:T.amber},
+  {id:"demurrage",label:"Demurrage", xKey:"avgODem",yKey:"avgDDem",fpX:3.1,fpY:3.0,xLabel:"Origin Dem (days)",yLabel:"Dest Dem (days)",color:T.purple},
+  {id:"storage",  label:"Storage",   xKey:"avgOSto",yKey:"avgDSto",fpX:3.1,fpY:3.0,xLabel:"Origin Sto (days)",yLabel:"Dest Sto (days)",color:T.green},
+  {id:"combined", label:"Combined D&D",xKey:"totalO",yKey:"totalD",fpX:9.9,fpY:9.0,xLabel:"Origin Total (days)",yLabel:"Dest Total (days)",color:T.red},
 ];
 
 function CarrierPage({setPage}){
   const[selCarrier,setSelCarrier]=useState(null);
-  const[view,setView]=useState("dwell");
+  const[view,setView]=useState("scatter");
   const carriers=useMemo(()=>Object.entries(BASE.carriers).filter(([,v])=>v.containers>=5).map(([n,d])=>{
     const beyondFP=+(d.avgODet-5.1).toFixed(1);
     const pastFPCount=Math.round(Math.max(0,beyondFP)*d.containers*0.6);
@@ -310,41 +315,90 @@ function CarrierPage({setPage}){
 
   const selStyle={border:"1px solid "+T.border,borderRadius:8,padding:"6px 12px",fontSize:11,color:T.text,background:"#fff",cursor:"pointer",outline:"none",fontWeight:600};
 
-  // Per-view scatter config: x field, y field, free period thresholds, axis labels
-  const scatterCfg=useMemo(()=>({
-    detention: {xKey:"avgODet",yKey:"avgDDet",fpX:5.1,fpY:6.0,xLabel:"Origin Detention (days)",yLabel:"Dest Detention (days)"},
-    demurrage: {xKey:"avgODem",yKey:"avgDDem",fpX:3.1,fpY:3.0,xLabel:"Origin Demurrage (days)",yLabel:"Dest Demurrage (days)"},
-    storage:   {xKey:"avgOSto",yKey:"avgDSto",fpX:3.1,fpY:3.0,xLabel:"Origin Storage (days)",yLabel:"Dest Storage (days)"},
-    combined:  {xKey:"totalO", yKey:"totalD", fpX:9.9,fpY:9.0,xLabel:"Origin Combined (days)",yLabel:"Dest Combined (days)"},
-  }),[]);
+  const rFromZ=z=>Math.min(14,3+Math.sqrt(z/60));
+  const riskCol=r=>r>70?T.red:r>40?T.amber:T.green;
 
-  const cfg=scatterCfg[view]||scatterCfg.detention;
+  const renderPanel=(cat)=>{
+    if(view==="scatter"){
+      const data=carriers.map(c=>({name:c.name,x:+c[cat.xKey].toFixed(2),y:+c[cat.yKey].toFixed(2),z:c.containers,risk:c.risk}));
+      const xs=data.map(c=>c.x);const ys=data.map(c=>c.y);
+      const xMax=+(Math.max(...xs)*1.3+0.3).toFixed(1);const yMax=+(Math.max(...ys)*1.3+0.3).toFixed(1);
+      return <div style={{position:"relative",height:200}}>
+        <div style={{position:"absolute",top:4,right:4,fontSize:8,fontWeight:700,color:T.red,opacity:.65,pointerEvents:"none",zIndex:5}}>Both Over ▲</div>
+        <div style={{position:"absolute",top:4,left:48,fontSize:8,fontWeight:700,color:T.amber,opacity:.65,pointerEvents:"none",zIndex:5}}>▲ Dest</div>
+        <div style={{position:"absolute",bottom:24,right:4,fontSize:8,fontWeight:700,color:T.amber,opacity:.65,pointerEvents:"none",zIndex:5}}>Origin ▶</div>
+        <div style={{position:"absolute",bottom:24,left:48,fontSize:8,fontWeight:700,color:T.green,opacity:.65,pointerEvents:"none",zIndex:5}}>◉ Best</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <ScatterChart margin={{top:14,right:18,bottom:24,left:4}}>
+            <CartesianGrid strokeDasharray="3 3" stroke={T.border+"50"}/>
+            <XAxis type="number" dataKey="x" domain={[0,xMax]} stroke={T.dim} fontSize={8}
+              label={{value:cat.xLabel,position:"insideBottom",offset:-12,fontSize:8,fill:T.sub}}/>
+            <YAxis type="number" dataKey="y" domain={[0,yMax]} stroke={T.dim} fontSize={8} width={28}
+              label={{value:cat.yLabel,angle:-90,position:"insideLeft",offset:14,fontSize:7,fill:T.sub}}/>
+            <ZAxis dataKey="z" range={[80,400]} name="Containers"/>
+            <ReferenceLine x={cat.fpX} stroke={T.red} strokeDasharray="4 2" strokeWidth={1.2}
+              label={{value:cat.fpX+"d",position:"top",fontSize:7,fill:T.red}}/>
+            <ReferenceLine y={cat.fpY} stroke={T.purple} strokeDasharray="4 2" strokeWidth={1.2}
+              label={{value:cat.fpY+"d",position:"right",fontSize:7,fill:T.purple}}/>
+            <Tooltip content={({active,payload})=>{
+              if(!active||!payload?.length)return null;
+              const d=payload[0].payload;
+              return <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",boxShadow:"0 4px 14px rgba(0,0,0,.12)",minWidth:140}}>
+                <div style={{fontSize:11,fontWeight:700,marginBottom:4,color:riskCol(d.risk)}}>{d.name}</div>
+                <div style={{fontSize:9,color:T.sub}}>{"Origin: "+d.x+"d (FP "+cat.fpX+"d)"}</div>
+                <div style={{fontSize:9,color:T.sub}}>{"Dest: "+d.y+"d (FP "+cat.fpY+"d)"}</div>
+                <div style={{fontSize:9,color:T.sub}}>{"Containers: "+d.z}</div>
+                <div style={{fontSize:9,fontWeight:700,color:riskCol(d.risk),marginTop:3}}>{"Risk: "+d.risk}</div>
+              </div>;
+            }}/>
+            <Scatter data={data} shape={({cx,cy,payload})=>{
+              const r=rFromZ(payload.z);const col=riskCol(payload.risk);
+              return <g>
+                <circle cx={cx} cy={cy} r={r} fill={col} fillOpacity={0.72} stroke="#fff" strokeWidth={1.3}/>
+                <text x={cx} y={cy-r-3} textAnchor="middle" fontSize={8} fontWeight={700} fill={T.text}>{payload.name}</text>
+              </g>;
+            }}/>
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>;
+    }
+if(view==="exceeding"){
+      const fpField={detention:"avgODet",demurrage:"avgODem",storage:"avgOSto",combined:"totalO"}[cat.id];
+      const fp=cat.fpX;
+      const data=carriers.map(c=>{
+        const beyond=Math.max(0,c[fpField]-fp);
+        const pastCount=Math.round(beyond*c.containers*0.6);
+        return{name:c.name,withinFP:c.containers-pastCount,pastFP:pastCount};
+      });
+      return <div style={{height:200}}><ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} margin={{top:8,right:8,bottom:20,left:4}} barCategoryGap="30%">
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border+"50"} vertical={false}/>
+          <XAxis dataKey="name" fontSize={8} stroke={T.dim} tick={{fontSize:8}}/>
+          <YAxis fontSize={8} stroke={T.dim} width={28}/>
+          <Tooltip contentStyle={{fontSize:10,borderRadius:8}} labelStyle={{fontWeight:700}}/>
+          <Bar dataKey="withinFP" name="Within FP" stackId="a" fill={T.green} fillOpacity={0.7} radius={[0,0,0,0]}/>
+          <Bar dataKey="pastFP"   name="Past FP"   stackId="a" fill={T.red}   fillOpacity={0.8} radius={[3,3,0,0]}/>
+        </BarChart>
+      </ResponsiveContainer></div>;
+    }
+    // cost view
+    const data=carriers.map(c=>({name:c.name,cost:Math.round(c.estCost/1000)})).sort((a,b)=>b.cost-a.cost);
+    return <div style={{height:200}}><ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data} margin={{top:8,right:8,bottom:20,left:4}} barCategoryGap="30%">
+        <CartesianGrid strokeDasharray="3 3" stroke={T.border+"50"} vertical={false}/>
+        <XAxis dataKey="name" fontSize={8} stroke={T.dim} tick={{fontSize:8}}/>
+        <YAxis fontSize={8} stroke={T.dim} width={32} tickFormatter={v=>v+"k"}/>
+        <Tooltip contentStyle={{fontSize:10,borderRadius:8}} labelStyle={{fontWeight:700}} formatter={v=>"$"+v+"k"}/>
+        <Bar dataKey="cost" name="Est. Cost" fill={cat.color} fillOpacity={0.8} radius={[3,3,0,0]}/>
+      </BarChart>
+    </ResponsiveContainer></div>;
+  };
 
-  const chartData=useMemo(()=>carriers.map(c=>({
-    name:c.name, x:+c[cfg.xKey].toFixed(2), y:+c[cfg.yKey].toFixed(2),
-    z:c.containers, risk:c.risk, ...c
-  })),[view,carriers,cfg]);
-
-  const viewMeta=useMemo(()=>{
-    const worstBoth=([...chartData].filter(c=>c.x>cfg.fpX&&c.y>cfg.fpY).sort((a,b)=>(b.x+b.y)-(a.x+a.y))[0]);
-    const worstO=([...chartData].filter(c=>c.x>cfg.fpX&&c.y<=cfg.fpY).sort((a,b)=>b.x-a.x)[0]);
-    const insightText=worstBoth
-      ?worstBoth.name+" is in the top-right quadrant — over free period on both origin ("+worstBoth.x+"d) and destination ("+worstBoth.y+"d). Highest priority for negotiation."
-      :worstO?worstO.name+" exceeds origin free period ("+worstO.x+"d vs "+(cfg.fpX)+"d). Destination within limits — focus origin release action."
-      :"All carriers within free period on both sides for this category.";
-    const labels={detention:"Detention",demurrage:"Demurrage",storage:"Storage",combined:"Combined D&D"};
-    return {
-      title:labels[view]+" — Origin vs Destination Dwell",
-      sub:cfg.xLabel+" (X) · "+cfg.yLabel+" (Y) · Bubble size = container volume · Color = carrier risk score",
-      insight:insightText
-    };
-  },[view,chartData,cfg]);
-
-  const vm=viewMeta;
+  const viewLabels={scatter:"Origin vs Destination scatter — quadrant view per charge category. Bubbles sized by container volume, colored by carrier risk score.",exceeding:"Container count within vs past free period per carrier, by charge category.",cost:"Estimated D&D cost exposure by carrier (directional estimate, not billing data)."};
 
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
-      <SH title="Carrier Intel" sub="Select a view to analyse carriers from different angles."/>
+      <SH title="Carrier Intel" sub="Select a view to analyse carriers from different angles. All 4 charge categories shown simultaneously."/>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         <span style={{fontSize:10,fontWeight:600,color:T.sub,textTransform:"uppercase"}}>View</span>
         <select value={view} onChange={e=>{setView(e.target.value);setSelCarrier(null);}} style={selStyle}>
@@ -353,55 +407,18 @@ function CarrierPage({setPage}){
       </div>
     </div>
 
-    <ChartBox title={vm.title} sub={vm.sub} h={340} insight={vm.insight} nav={<NavLink text="See port and lane performance trends → Historical" onClick={()=>setPage("history")}/>}>
-      {(()=>{
-        const rFromZ=z=>Math.min(18,4+Math.sqrt(z/50));
-        const riskCol=r=>r>70?T.red:r>40?T.amber:T.green;
-        const fpX=cfg.fpX;const fpY=cfg.fpY;
-        // axis domain with padding
-        const xs=chartData.map(c=>c.x);const ys=chartData.map(c=>c.y);
-        const xMax=+(Math.max(...xs)*1.25+0.5).toFixed(1);const yMax=+(Math.max(...ys)*1.25+0.5).toFixed(1);
-        return <div style={{position:"relative",height:290}}>
-          {/* Quadrant corner labels */}
-          <div style={{position:"absolute",top:6,right:8,fontSize:9,fontWeight:700,color:T.red,opacity:.7,pointerEvents:"none",zIndex:5}}>Both Over FP ▲</div>
-          <div style={{position:"absolute",top:6,left:60,fontSize:9,fontWeight:700,color:T.amber,opacity:.7,pointerEvents:"none",zIndex:5}}>▲ Dest Focus</div>
-          <div style={{position:"absolute",bottom:30,right:8,fontSize:9,fontWeight:700,color:T.amber,opacity:.7,pointerEvents:"none",zIndex:5}}>Origin Focus ▶</div>
-          <div style={{position:"absolute",bottom:30,left:60,fontSize:9,fontWeight:700,color:T.green,opacity:.7,pointerEvents:"none",zIndex:5}}>◉ Best Performer</div>
-          <ResponsiveContainer width="100%" height={290}>
-            <ScatterChart margin={{top:20,right:30,bottom:30,left:10}}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/>
-              <XAxis type="number" dataKey="x" domain={[0,xMax]} name={cfg.xLabel} stroke={T.dim} fontSize={9}
-                label={{value:cfg.xLabel,position:"insideBottom",offset:-16,fontSize:9,fill:T.sub}}/>
-              <YAxis type="number" dataKey="y" domain={[0,yMax]} name={cfg.yLabel} stroke={T.dim} fontSize={9}
-                label={{value:cfg.yLabel,angle:-90,position:"insideLeft",offset:16,fontSize:9,fill:T.sub}}/>
-              <ZAxis dataKey="z" range={[150,700]} name="Containers"/>
-              <ReferenceLine x={fpX} stroke={T.red} strokeDasharray="5 3" strokeWidth={1.5}
-                label={{value:"Origin FP "+fpX+"d",position:"top",fontSize:8,fill:T.red}}/>
-              <ReferenceLine y={fpY} stroke={T.purple} strokeDasharray="5 3" strokeWidth={1.5}
-                label={{value:"Dest FP "+fpY+"d",position:"right",fontSize:8,fill:T.purple}}/>
-              <Tooltip content={({active,payload})=>{
-                if(!active||!payload?.length)return null;
-                const d=payload[0].payload;
-                return <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,.1)",minWidth:160}}>
-                  <div style={{fontSize:12,fontWeight:700,marginBottom:6,color:riskCol(d.risk)}}>{d.name}</div>
-                  <div style={{fontSize:10,color:T.sub,marginBottom:2}}>{"Origin: "+d.x+"d  (FP "+fpX+"d)"}</div>
-                  <div style={{fontSize:10,color:T.sub,marginBottom:2}}>{"Dest: "+d.y+"d  (FP "+fpY+"d)"}</div>
-                  <div style={{fontSize:10,color:T.sub,marginBottom:2}}>{"Containers: "+d.z}</div>
-                  <div style={{fontSize:10,fontWeight:700,color:riskCol(d.risk),marginTop:4}}>{"Risk score: "+d.risk}</div>
-                </div>;
-              }}/>
-              <Scatter data={chartData} shape={({cx,cy,payload})=>{
-                const r=rFromZ(payload.z);const col=riskCol(payload.risk);
-                return <g>
-                  <circle cx={cx} cy={cy} r={r} fill={col} fillOpacity={0.72} stroke="#fff" strokeWidth={1.5}/>
-                  <text x={cx} y={cy-r-4} textAnchor="middle" fontSize={9} fontWeight={700} fill={T.text}>{payload.name}</text>
-                </g>;
-              }}/>
-            </ScatterChart>
-          </ResponsiveContainer>
-        </div>;
-      })()}
-    </ChartBox>
+    <Card style={{marginBottom:12}}>
+      <div style={{fontSize:11,color:T.sub,marginBottom:12}}>{viewLabels[view]}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        {SCATTER_CATS.map(cat=>(
+          <div key={cat.id} style={{background:T.card2,borderRadius:10,padding:"10px 12px"}}>
+            <div style={{fontSize:11,fontWeight:700,color:cat.color,marginBottom:6}}>{cat.label}</div>
+            {renderPanel(cat)}
+          </div>
+        ))}
+      </div>
+      <NavLink text="See port and lane performance trends → Historical" onClick={()=>setPage("history")}/>
+    </Card>
 
     <Card style={{marginTop:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
@@ -409,24 +426,21 @@ function CarrierPage({setPage}){
         <div style={{fontSize:11,color:T.sub}}>Carrier scores are for evaluation only. Business relationships and other factors should inform decisions.</div></div>
       </div>
       {(()=>{
-        const activeX={detention:"avgODet",demurrage:"avgODem",storage:"avgOSto",combined:"totalO"}[view];
-        const activeY={detention:"avgDDet",demurrage:"avgDDem",storage:"avgDSto",combined:"totalD"}[view];
-        const hStyle=(h,active)=>({padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",fontSize:9,
+        const hStyle=(h)=>({padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",fontSize:9,
           textAlign:["Vol","Beyond FP","Score"].includes(h)?"right":"left",
-          color:active?T.blue:T.dim,background:active?T.blue+"12":T.card2,
-          transition:"background .15s"});
+          color:T.dim,background:T.card2});
         const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","D.Dem","D.Det","D.Sto","Beyond FP","Score"];
-        const colKeys={   "O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","D.Dem":"avgDDem","D.Det":"avgDDet","D.Sto":"avgDSto"};
-        const activeHighlight={"detention":["O.Det","D.Det"],"demurrage":["O.Dem","D.Dem"],"storage":["O.Sto","D.Sto"],"combined":["O.Det","O.Dem","D.Dem","D.Det"]}[view]||[];
+        const colKeys={"O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","D.Dem":"avgDDem","D.Det":"avgDDet","D.Sto":"avgDSto"};
+        const fpMap={"O.Det":5.1,"O.Dem":3.1,"O.Sto":3.1,"D.Det":6.0,"D.Dem":3.0,"D.Sto":3.0};
         return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
-          <thead><tr>{cols.map(h=><th key={h} style={hStyle(h,activeHighlight.includes(h))}>{h}
+          <thead><tr>{cols.map(h=><th key={h} style={hStyle(h)}>{h}
             {h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}
             {h==="Beyond FP"&&<HoverTip text="Avg origin detention minus 5.1d free period. Positive = containers in paid tiers."/>}
           </th>)}</tr></thead>
-          <tbody>{[...carriers].sort((a,b)=>b[activeX]-a[activeX]).map(c=>{
+          <tbody>{[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>{
             const sel=selCarrier===c.name;
             const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;
-            const hiCol=(key)=>activeHighlight.includes(key)?{fontWeight:700,color:c[colKeys[key]]>cfg.fpX?T.red:T.green}:{color:T.sub};
+            const hiCol=(key)=>colKeys[key]?{fontWeight:600,color:c[colKeys[key]]>fpMap[key]?T.red:T.green}:{color:T.sub};
             return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}>
               <td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td>
               <td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td>
