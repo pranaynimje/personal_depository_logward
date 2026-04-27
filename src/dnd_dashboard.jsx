@@ -549,34 +549,42 @@ function OptimizerPage(){
         const sortedA=sortFn(groupA.active,aSortCol,aSortDir);const sortedB=sortFn(groupB.active,bSortCol,bSortDir);
         const mkOnSort=(setCol,setDir,col,curCol,curDir)=>()=>{if(col===curCol)setDir(d=>d==="desc"?"asc":"desc");else{setCol(col);setDir("desc");}};
         const SortTh=({col,label,sCol,sDir,onSort})=>{const active=sCol===col;return <th onClick={()=>onSort(col)} style={{padding:"6px 8px",textAlign:"right",color:active?T.blue:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap"}}>{label}{active?sDir==="desc"?" ↓":" ↑":" ↕"}</th>;};
+        const thStyle=(right,active,color)=>({padding:"7px 6px",textAlign:right?"right":"left",color:active?color:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap",background:"inherit"});
         const ContainerRow=({c,dimmed})=><tr style={{background:"#fff",opacity:dimmed?.35:1,borderBottom:"1px solid "+T.border+"30"}}>
-          <td style={{padding:"5px 8px",fontFamily:"monospace",fontSize:9,fontWeight:600,whiteSpace:"nowrap"}}>{c.cn}</td>
-          <td style={{padding:"5px 8px",fontSize:9,color:T.sub}}>{c.ca}</td>
-          <td style={{padding:"5px 8px",fontSize:9,color:T.sub,whiteSpace:"nowrap"}}>{c.po+"→"+c.pd}</td>
-          <td style={{padding:"5px 8px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
-          <td style={{padding:"5px 8px",fontSize:9,color:c.fpStatus==="Expired"?T.red:c.fpStatus==="Green"?T.green:T.amber,fontWeight:600}}>{c.fpStatus}</td>
-          <td style={{padding:"5px 8px",textAlign:"right"}}>
+          <td style={{padding:"5px 6px",fontFamily:"monospace",fontSize:9,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:80}}>{c.cn}</td>
+          <td style={{padding:"5px 6px",fontSize:9,color:T.sub}}>{c.ca}</td>
+          <td style={{padding:"5px 6px",fontSize:9,color:T.sub,whiteSpace:"nowrap"}}>{c.po+"→"+c.pd}</td>
+          <td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
+          <td style={{padding:"5px 6px",fontSize:9,color:c.fpStatus==="Expired"?T.red:c.fpStatus==="Green"?T.green:T.amber,fontWeight:600,whiteSpace:"nowrap"}}>{c.fpStatus}</td>
+          <td style={{padding:"5px 6px",textAlign:"right"}}>
             <div style={{fontWeight:700,color:T.green,fontSize:10}}>{fmt(c.todayCost)}</div>
-            <div style={{fontSize:8,color:T.sub,marginTop:1}}>{"3d: "+fmt(c.sav3d)+" · 7d: "+fmt(c.sav7d)}</div>
+            <div style={{fontSize:8,color:T.sub,lineHeight:1.5}}>{"3d: "+fmt(c.sav3d)}</div>
+            <div style={{fontSize:8,color:T.sub,lineHeight:1.5}}>{"7d: "+fmt(c.sav7d)}</div>
           </td>
-          <td style={{padding:"5px 8px",textAlign:"right",color:T.red,fontSize:9,fontWeight:600}}>{"$"+c.daily+"/d"}</td>
-          <td style={{padding:"5px 8px",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:c.risk>=50?T.amber:T.green}>{c.risk}</SolidBadge></td>
+          <td style={{padding:"5px 6px",textAlign:"right",color:T.red,fontSize:9,fontWeight:600}}>{"$"+c.daily}</td>
+          <td style={{padding:"5px 6px",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:c.risk>=50?T.amber:T.green}>{c.risk}</SolidBadge></td>
         </tr>;
         return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}}>
-          {[[sortedA,aSortCol,aSortDir,setASortCol,setASortDir,T.blue,"A"],[sortedB,bSortCol,bSortDir,setBSortCol,setBSortDir,T.purple,"B"]].map(([data,sCol,sDir,setCol,setDir,color,label])=><div key={label}>
+          {[[sortedA,aSortCol,aSortDir,setASortCol,setASortDir,T.blue,"A"],[sortedB,bSortCol,bSortDir,setBSortCol,setBSortDir,T.purple,"B"]].map(([data,sCol,sDir,setCol,setDir,color,label])=><div key={label} style={{minWidth:0}}>
             <div style={{fontSize:10,fontWeight:700,color,marginBottom:4}}>Group {label} — Container Details</div>
-            <div style={{maxHeight:220,overflowY:"auto",borderRadius:8,border:"1px solid "+T.border+"40"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
-                <thead style={{position:"sticky",top:0,background:color+"10",zIndex:1}}>
+            <div style={{maxHeight:240,overflowY:"auto",overflowX:"hidden",borderRadius:8,border:"1px solid "+T.border+"40"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:10,tableLayout:"fixed"}}>
+                <colgroup>
+                  <col style={{width:"22%"}}/>
+                  <col style={{width:"10%"}}/>
+                  <col style={{width:"16%"}}/>
+                  <col style={{width:"12%"}}/>
+                  <col style={{width:"14%"}}/>
+                  <col style={{width:"13%"}}/>
+                  <col style={{width:"8%"}}/>
+                  <col style={{width:"7%"}}/>
+                </colgroup>
+                <thead style={{position:"sticky",top:0,zIndex:2,background:color==="#2563EB"?"#EFF6FF":"#F5F3FF"}}>
                   <tr>
-                    <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>Container</th>
-                    <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>Carrier</th>
-                    <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>Lane</th>
-                    <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>Cat</th>
-                    <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>FP Status</th>
-                    <SortTh col="todayCost" label="Avoidable (3d·7d)" sCol={sCol} sDir={sDir} onSort={mkOnSort(setCol,setDir,"todayCost",sCol,sDir)}/>
-                    <SortTh col="daily" label="$/day" sCol={sCol} sDir={sDir} onSort={mkOnSort(setCol,setDir,"daily",sCol,sDir)}/>
-                    <SortTh col="risk" label="Risk" sCol={sCol} sDir={sDir} onSort={mkOnSort(setCol,setDir,"risk",sCol,sDir)}/>
+                    {[["Container",false,false],["Carrier",false,false],["Lane",false,false],["Cat",false,false],["FP Status",false,false]].map(([h])=><th key={h} style={thStyle(false,false,color)}>{h}</th>)}
+                    <th onClick={()=>mkOnSort(setCol,setDir,"todayCost",sCol,sDir)()} style={thStyle(true,sCol==="todayCost",color)}>{"Avoidable"+(sCol==="todayCost"?sDir==="desc"?" ↓":" ↑":" ↕")}</th>
+                    <th onClick={()=>mkOnSort(setCol,setDir,"daily",sCol,sDir)()} style={thStyle(true,sCol==="daily",color)}>{"$/d"+(sCol==="daily"?sDir==="desc"?" ↓":" ↑":" ↕")}</th>
+                    <th onClick={()=>mkOnSort(setCol,setDir,"risk",sCol,sDir)()} style={thStyle(true,sCol==="risk",color)}>{"Risk"+(sCol==="risk"?sDir==="desc"?" ↓":" ↑":" ↕")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -587,7 +595,7 @@ function OptimizerPage(){
                 </tbody>
               </table>
             </div>
-            <div style={{fontSize:9,color:T.dim,marginTop:3,fontStyle:"italic"}}>Dimmed rows excluded by Top N. Verify customs & documentation before acting.</div>
+            <div style={{fontSize:9,color:T.dim,marginTop:3,fontStyle:"italic"}}>Dimmed rows excluded by Top N. Verify customs & docs before acting.</div>
           </div>)}
         </div>;
       })()}
