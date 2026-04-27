@@ -73,6 +73,7 @@ function HomePage({setPage}){
   const cm=BASE.costMatrix;const fth=BASE.freeTimeHealth;const sd=BASE.stageDays;const st=BASE.stages;
   const mom=momPct(BASE.mom.currTotal,BASE.mom.prevTotal);
   const storagePct=Math.round((cm.storage_origin.total+cm.storage_destination.total)/BASE.grandTotal*100);
+  const[breakdownToggle,setBreakdownToggle]=useState("category");
   const originPct=Math.round(BASE.totalOriginCost/BASE.grandTotal*100);
   const topBurn=CDATA.topRisk.slice(0,5).reduce((s,c)=>s+Math.round((c.cost3d-c.cost)/3),0);
 
@@ -88,10 +89,20 @@ function HomePage({setPage}){
         </div>
       </Card>
       <Card style={{padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"center",borderTop:"3px solid "+T.red,background:"#fff"}}>
-        <div style={{fontSize:24,fontWeight:800,color:T.red}}>{fth.red} critical</div>
-        <div style={{fontSize:11,color:T.sub}}>{fth.yellow} monitor | {fth.expired.toLocaleString()} expired</div>
-        <div style={{fontSize:13,fontWeight:700,color:T.red,marginTop:6}}>{"Est. daily burn: "+fmt(topBurn)+"/day"}</div>
-        <div onClick={()=>document.getElementById("actionTable")&&document.getElementById("actionTable").scrollIntoView({behavior:"smooth"})} style={{fontSize:10,color:T.blueL,fontWeight:600,cursor:"pointer",marginTop:6}}>{"See Action List ↓"}</div>
+        <div style={{display:"flex",gap:12,marginBottom:8}}>
+          <div style={{flex:1,background:T.redBg,borderRadius:8,padding:"8px 10px",borderLeft:"3px solid "+T.red}}>
+            <div style={{fontSize:20,fontWeight:800,color:T.red}}>{fth.expired.toLocaleString()}</div>
+            <div style={{fontSize:10,fontWeight:700,color:T.red}}>Overdue</div>
+            <div style={{fontSize:9,color:T.sub,marginTop:1}}>Free period expired — charges accruing</div>
+          </div>
+          <div style={{flex:1,background:T.amberBg,borderRadius:8,padding:"8px 10px",borderLeft:"3px solid "+T.amber}}>
+            <div style={{fontSize:20,fontWeight:800,color:T.amber}}>{fth.red}</div>
+            <div style={{fontSize:10,fontWeight:700,color:T.amber}}>At Risk</div>
+            <div style={{fontSize:9,color:T.sub,marginTop:1}}>Expiring within 48 hours</div>
+          </div>
+        </div>
+        <div style={{fontSize:13,fontWeight:700,color:T.red}}>{"Est. daily burn: "+fmt(topBurn)+"/day"}</div>
+        <div onClick={()=>document.getElementById("freeTimeHealth")&&document.getElementById("freeTimeHealth").scrollIntoView({behavior:"smooth"})} style={{fontSize:10,color:T.blueL,fontWeight:600,cursor:"pointer",marginTop:6}}>{"See Free Time Breakdown ↓"}</div>
       </Card>
     </div>
 
@@ -134,19 +145,54 @@ function HomePage({setPage}){
     {/* ANALYSIS ZONE */}
     <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:16,marginBottom:18}}>
       <Card>
-        <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Cost Breakdown</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+          <div style={{fontSize:14,fontWeight:600}}>Cost Breakdown</div>
+          <div style={{display:"flex",background:T.card2,borderRadius:8,padding:2,gap:2}}>
+            {[{id:"category",label:"By Category"},{id:"location",label:"By Location"}].map(t=><button key={t.id} onClick={()=>setBreakdownToggle(t.id)} style={{fontSize:9,fontWeight:600,padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",background:breakdownToggle===t.id?"#fff":T.card2,color:breakdownToggle===t.id?T.text:T.sub,boxShadow:breakdownToggle===t.id?"0 1px 3px rgba(0,0,0,.1)":"none"}}>{t.label}</button>)}
+          </div>
+        </div>
         <div style={{fontSize:11,color:T.sub,marginBottom:10}}>Which charge type and side is driving your exposure?</div>
-        <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:11}}>
-          <thead><tr style={{color:T.dim,fontSize:9}}>{["Category","Origin","Dest","Total","#","FP"].map(h=><th key={h} style={{padding:"4px 8px",textAlign:h==="Category"?"left":"right",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{h}</th>)}</tr></thead>
-          <tbody>{COST_CATS.map((cat,ci)=>{const o=cm[cat.oKey];const d=cm[cat.dKey];const isMax=cat.name==="Combined D&D";return <tr key={cat.name} style={{background:isMax?T.redBg+"80":T.card2,borderLeft:isMax?"3px solid "+T.red:undefined}}><td style={{padding:"6px 8px",borderRadius:"6px 0 0 6px",borderLeft:isMax?"3px solid "+T.red:undefined}}><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:8,height:8,borderRadius:2,background:cat.color}}/><span style={{fontWeight:700}}>{cat.name}</span></div></td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(o.total)}</td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(d.total)}</td><td style={{padding:"6px 8px",color:cat.color,fontWeight:600,textAlign:"right"}}>{fmt(o.total+d.total)}</td><td style={{padding:"6px 8px",color:T.sub,textAlign:"right"}}>{o.withCost+d.withCost}</td><td style={{padding:"6px 8px",color:T.sub,textAlign:"right",borderRadius:"0 6px 6px 0"}}>{o.avgFP}d</td></tr>;})}
-          <tr><td colSpan={3} style={{padding:8,fontWeight:600,fontSize:13}}>TOTAL</td><td colSpan={3} style={{padding:8,color:T.red,fontWeight:700,fontSize:14,textAlign:"right"}}>{fmt(BASE.grandTotal)}</td></tr></tbody>
-        </table>
+        {breakdownToggle==="category"?(
+          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:11}}>
+            <thead><tr style={{color:T.dim,fontSize:9}}>{["Category","Origin","Dest","Total","FP"].map(h=><th key={h} style={{padding:"4px 8px",textAlign:h==="Category"?"left":"right",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{h}</th>)}</tr></thead>
+            <tbody>{COST_CATS.map((cat)=>{const o=cm[cat.oKey];const d=cm[cat.dKey];const isMax=cat.name==="Combined D&D";return <tr key={cat.name} style={{background:isMax?T.redBg+"80":T.card2}}><td style={{padding:"6px 8px",borderRadius:"6px 0 0 6px",borderLeft:isMax?"3px solid "+T.red:undefined}}><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:8,height:8,borderRadius:2,background:cat.color}}/><span style={{fontWeight:700}}>{cat.name}</span></div></td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(o.total)}</td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(d.total)}</td><td style={{padding:"6px 8px",color:cat.color,fontWeight:700,textAlign:"right"}}>{fmt(o.total+d.total)}</td><td style={{padding:"6px 8px",color:T.sub,textAlign:"right",borderRadius:"0 6px 6px 0"}}>{o.avgFP}d</td></tr>;})}
+            <tr><td colSpan={3} style={{padding:8,fontWeight:600,fontSize:13}}>TOTAL</td><td colSpan={2} style={{padding:8,color:T.red,fontWeight:700,fontSize:14,textAlign:"right"}}>{fmt(BASE.grandTotal)}</td></tr></tbody>
+          </table>
+        ):(
+          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:11}}>
+            <thead><tr style={{color:T.dim,fontSize:9}}>{["Location","Detention","Demurrage","Storage","Combined D&D","Total"].map(h=><th key={h} style={{padding:"4px 8px",textAlign:h==="Location"?"left":"right",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{h}</th>)}</tr></thead>
+            <tbody>
+              {[{label:"Origin",color:T.amber,det:cm.detention_origin.total,dem:cm.demurrage_origin.total,sto:cm.storage_origin.total,dnd:cm.dnd_origin.total},
+                {label:"Destination",color:T.purple,det:cm.detention_destination.total,dem:cm.demurrage_destination.total,sto:cm.storage_destination.total,dnd:cm.dnd_destination.total}
+              ].map(row=><tr key={row.label} style={{background:T.card2}}>
+                <td style={{padding:"6px 8px",borderRadius:"6px 0 0 6px"}}><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:8,height:8,borderRadius:2,background:row.color}}/><span style={{fontWeight:700}}>{row.label}</span></div></td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:600,color:T.amber}}>{fmt(row.det)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:600,color:T.purple}}>{fmt(row.dem)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:600,color:T.green}}>{fmt(row.sto)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:600,color:T.red}}>{fmt(row.dnd)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,borderRadius:"0 6px 6px 0"}}>{fmt(row.det+row.dem+row.sto+row.dnd)}</td>
+              </tr>)}
+              <tr><td colSpan={5} style={{padding:8,fontWeight:600,fontSize:13}}>TOTAL</td><td style={{padding:8,color:T.red,fontWeight:700,fontSize:14,textAlign:"right"}}>{fmt(BASE.grandTotal)}</td></tr>
+            </tbody>
+          </table>
+        )}
         <Insight text={(()=>{const cats=[{n:"Combined D&D",v:cm.dnd_origin.total},{n:"Detention",v:cm.detention_origin.total},{n:"Demurrage",v:cm.demurrage_origin.total},{n:"Storage",v:cm.storage_origin.total}];const top=cats.reduce((a,b)=>b.v>a.v?b:a);return top.n+" at origin ("+fmt(top.v)+") accounts for "+Math.round(top.v/BASE.grandTotal*100)+"% of total exposure. This is your largest cost bucket.";})()}/>
       </Card>
-      <Card>
+      <Card id="freeTimeHealth">
         <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Free Time Health</div>
-        <div style={{fontSize:11,color:T.sub,marginBottom:10}}>How close are containers to entering paid tiers?</div>
-        {[{label:"Expired",count:fth.expired,color:T.red,action:"Review and clear"},{label:"Critical (0-2d)",count:fth.red,color:T.red,action:"Expedite TODAY"},{label:"Monitor (3-5d)",count:fth.yellow,color:T.amber,action:"Plan this week"},{label:"Safe (6+d)",count:fth.green,color:T.green,action:"No action needed"}].map(b=>{const tot=fth.expired+fth.red+fth.yellow+fth.green;return <div key={b.label} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:12,color:T.sub}}>{b.label}</span><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:10,color:b.color,fontWeight:600}}>{b.action}</span><span style={{fontSize:12,fontWeight:700,color:b.color}}>{b.count.toLocaleString()}</span></div></div><div style={{height:6,background:T.card2,borderRadius:3,overflow:"hidden",border:"none",boxShadow:"inset 0 1px 2px rgba(0,0,0,.06)"}}><div style={{height:"100%",width:Math.round(b.count/tot*100)+"%",background:b.color,borderRadius:3}}/></div></div>;})}
+        <div style={{fontSize:11,color:T.sub,marginBottom:10}}>Distribution of containers by free period status</div>
+        {[
+          {label:"Overdue",desc:"Free period expired",count:fth.expired,color:T.red,action:"Review and clear"},
+          {label:"At Risk",desc:"Expiring within 48 hours",count:fth.red,color:T.amber,action:"Expedite today"},
+          {label:"Monitor",desc:"Expiring in 3–5 days",count:fth.yellow,color:"#EAB308",action:"Plan this week"},
+          {label:"Safe",desc:"6+ days remaining",count:fth.green,color:T.green,action:"No action needed"}
+        ].map(b=>{const tot=fth.expired+fth.red+fth.yellow+fth.green;return <div key={b.label} style={{marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+            <div><span style={{fontSize:12,fontWeight:600,color:b.color}}>{b.label}</span><span style={{fontSize:9,color:T.sub,marginLeft:6}}>{b.desc}</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:9,color:T.sub}}>{b.action}</span><span style={{fontSize:12,fontWeight:700,color:b.color}}>{b.count.toLocaleString()}</span></div>
+          </div>
+          <div style={{height:6,background:T.card2,borderRadius:3,overflow:"hidden",boxShadow:"inset 0 1px 2px rgba(0,0,0,.06)"}}><div style={{height:"100%",width:Math.round(b.count/tot*100)+"%",background:b.color,borderRadius:3}}/></div>
+        </div>;})}
       </Card>
     </div>
     <div style={{height:1,background:T.border+"40",margin:"6px 0 14px"}}/>
@@ -192,7 +238,7 @@ function CostPage({setPage}){
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <SH title="Cost Overview" sub="Where exactly is the money going? Drill into category, side, and distribution."/>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
-      <ChartBox title="Origin vs Destination by Category" sub="Compare which category has the biggest origin-to-destination gap" h={220} insight={(()=>{const maxCat=COST_CATS.reduce((a,cat)=>{const t=cm[cat.oKey].total+cm[cat.dKey].total;return t>a.total?{name:cat.name,total:t,oTotal:cm[cat.oKey].total}:a;},{name:"",total:0,oTotal:0});return maxCat.name+" ("+fmt(maxCat.total)+") is the largest category at "+Math.round(maxCat.total/BASE.grandTotal*100)+"% of total. Origin accounts for "+fmt(maxCat.oTotal)+" ("+Math.round(maxCat.oTotal/Math.max(1,maxCat.total)*100)+"%).";})()} nav={<NavLink text="See which carriers drive this → Carrier Intel" onClick={()=>setPage("carriers")}/>}><ResponsiveContainer><BarChart data={barData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis type="number" stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><YAxis type="category" dataKey="name" stroke={T.dim} fontSize={10} width={80}/><Tooltip content={<CTip/>}/><Bar dataKey="Origin" fill={T.amber} radius={[0,3,3,0]}/><Bar dataKey="Dest" fill={T.purple} radius={[0,3,3,0]}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></BarChart></ResponsiveContainer></ChartBox>
+      <ChartBox title="Origin vs Destination by Category" sub="Compare which category has the biggest origin-to-destination gap" h={220} insight={(()=>{const maxCat=COST_CATS.reduce((a,cat)=>{const t=cm[cat.oKey].total+cm[cat.dKey].total;return t>a.total?{name:cat.name,total:t,oTotal:cm[cat.oKey].total}:a;},{name:"",total:0,oTotal:0});return maxCat.name+" ("+fmt(maxCat.total)+") is the largest category at "+Math.round(maxCat.total/BASE.grandTotal*100)+"% of total. Origin accounts for "+fmt(maxCat.oTotal)+" ("+Math.round(maxCat.oTotal/Math.max(1,maxCat.total)*100)+"%).";})()} nav={<NavLink text="See which carriers drive this → Carrier Intel" onClick={()=>setPage("carriers")}/>}><ResponsiveContainer><BarChart data={barData} barCategoryGap="30%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><Tooltip content={<CTip/>}/><Bar dataKey="Origin" fill={T.amber} radius={[3,3,0,0]}/><Bar dataKey="Dest" fill={T.purple} radius={[3,3,0,0]}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></BarChart></ResponsiveContainer></ChartBox>
       <ChartBox title="Cost Distribution" sub="Proportional share of each charge type in total cost" h={220}><ResponsiveContainer><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={85} dataKey="value" paddingAngle={2}>{pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip formatter={v=>fmt(v)}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></PieChart></ResponsiveContainer></ChartBox>
     </div>
     <Card>
@@ -229,7 +275,6 @@ const CARRIER_VIEWS=[
   {id:"dwell",     label:"Avg Dwell Time"},
   {id:"exceeding", label:"Containers Exceeding Free Days"},
   {id:"cost",      label:"Cost Exposure by Carrier"},
-  {id:"tier",      label:"Free Period Tier Distribution"},
 ];
 
 function CarrierPage({setPage}){
@@ -254,14 +299,12 @@ function CarrierPage({setPage}){
     if(view==="dwell") return carriers.map(c=>({name:c.name,"O.Det":c.avgODet,"O.Dem":c.avgODem,"O.Comb":+(c.avgODet+c.avgODem).toFixed(1),"D.Det":c.avgDDet,"D.Dem":c.avgDDem,"D.Comb":+(c.avgDDem+c.avgDDet).toFixed(1)}));
     if(view==="exceeding") return carriers.map(c=>({name:c.name,"Past FP":c.pastFPCount,"Within FP":c.containers-c.pastFPCount}));
     if(view==="cost") return carriers.map(c=>({name:c.name,"Est. Cost":c.estCost}));
-    if(view==="tier") return carriers.map(c=>({name:c.name,"Free (No Charge)":c.tierIn,"1–3 Days Overdue":c.tier1,"4–7 Days Overdue":c.tier2,"7+ Days Overdue":c.tier3}));
   },[view,carriers]);
 
   const viewMeta={
     dwell:{title:"Avg Dwell by Carrier (Days)",sub:"Left=Origin, Right=Destination. Reference line = 5.1d free period.",insight:(()=>{const wc=carriers[0];return wc.name+" origin dwell ("+wc.totalO.toFixed(1)+"d) is "+(wc.totalO/5.1).toFixed(1)+"× the free-period threshold. Biggest carrier-level cost driver.";})()},
     exceeding:{title:"Containers Exceeding Free Period",sub:"Count of containers estimated past free period vs within it, per carrier.",insight:(()=>{const wc=[...carriers].sort((a,b)=>b.pastFPCount-a.pastFPCount)[0];return wc.name+" has the most containers past free period (~"+wc.pastFPCount+" of "+wc.containers+", "+wc.pastFPPct+"%). Prioritise this carrier for release action.";})()},
     cost:{title:"Estimated D&D Cost Exposure by Carrier ($)",sub:"Estimated cost based on dwell beyond free period × daily rate. Directional — not billing data.",insight:(()=>{const wc=[...carriers].sort((a,b)=>b.estCost-a.estCost)[0];return wc.name+" carries the highest estimated exposure ("+fmt(wc.estCost)+"). Focus negotiation and release efforts here first.";})()},
-    tier:{title:"Free Period Tier Distribution by Carrier",sub:"How containers are distributed across cost tiers. Longer bars in FP+4d+ = deeper in paid tiers.",insight:(()=>{const wc=[...carriers].sort((a,b)=>(b.tier2+b.tier3)-(a.tier2+a.tier3))[0];return wc.name+" has the most containers in FP+4d+ tiers ("+( wc.tier2+wc.tier3)+"). These are accruing the highest daily rates.";})()},
   };
 
   const vm=viewMeta[view];
@@ -291,42 +334,6 @@ function CarrierPage({setPage}){
       {view==="cost"&&(
         <div style={{height:250}}><ResponsiveContainer><BarChart data={[...chartData].sort((a,b)=>b["Est. Cost"]-a["Est. Cost"])} barSize={22} barCategoryGap="35%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>"$"+Math.round(v/1000)+"k"}/><Tooltip content={({active,payload,label})=>{if(!active||!payload?.length)return null;return <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,.08)"}}><div style={{fontSize:11,fontWeight:700,marginBottom:4}}>{label}</div><div style={{fontSize:9,color:T.red}}>{"Est. Exposure: "+fmt(payload[0].value)}</div></div>;}}/><Bar dataKey="Est. Cost" fill={T.red} radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div>
       )}
-      {view==="tier"&&(()=>{
-        const TIERS=[
-          {key:"Free (No Charge)",  color:T.green,   rate:"$0/day",    sub:"Within free period"},
-          {key:"1–3 Days Overdue",  color:T.amber,   rate:"~$50/day",  sub:"Low tier — act soon"},
-          {key:"4–7 Days Overdue",  color:"#F97316", rate:"~$100/day", sub:"Mid tier — costs rising"},
-          {key:"7+ Days Overdue",   color:T.red,     rate:"~$200/day", sub:"Highest tier — urgent"},
-        ];
-        const TierTip=({active,payload,label})=>{
-          if(!active||!payload?.length)return null;
-          const carr=carriers.find(c=>c.name===label);
-          if(!carr)return null;
-          return <div style={{background:"#fff",borderRadius:10,padding:"12px 16px",boxShadow:"0 4px 16px rgba(0,0,0,.1)",minWidth:200}}>
-            <div style={{fontSize:11,fontWeight:700,marginBottom:8,borderBottom:"1px solid #f0f0f0",paddingBottom:4}}>{label} — {carr.containers} containers total</div>
-            {TIERS.map(t=>{
-              const count=payload.find(p=>p.dataKey===t.key)?.value??0;
-              const pct=carr.containers>0?Math.round(count/carr.containers*100):0;
-              return <div key={t.key} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                <div style={{width:8,height:8,borderRadius:2,background:t.color,flexShrink:0}}/>
-                <span style={{fontSize:9,color:T.sub,flex:1}}>{t.key}</span>
-                <span style={{fontSize:10,fontWeight:700,color:t.color,minWidth:20,textAlign:"right"}}>{count}</span>
-                <span style={{fontSize:9,color:T.dim,minWidth:28,textAlign:"right"}}>{pct}%</span>
-                <span style={{fontSize:9,color:T.sub,minWidth:60,textAlign:"right"}}>{t.rate}</span>
-              </div>;
-            })}
-          </div>;
-        };
-        return <>
-          <div style={{display:"flex",gap:16,marginBottom:10,flexWrap:"wrap",alignItems:"flex-start"}}>
-            {TIERS.map(t=><div key={t.key} style={{display:"flex",alignItems:"flex-start",gap:6}}>
-              <div style={{width:10,height:10,borderRadius:2,background:t.color,marginTop:1,flexShrink:0}}/>
-              <div><div style={{fontSize:9,fontWeight:700,color:T.text}}>{t.key}</div><div style={{fontSize:8,color:T.sub}}>{t.rate}</div></div>
-            </div>)}
-          </div>
-          <div style={{height:240}}><ResponsiveContainer><BarChart data={chartData} barSize={20} barCategoryGap="35%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} label={{value:"Containers",angle:-90,position:"insideLeft",fontSize:9,fill:T.dim}}/><Tooltip content={<TierTip/>}/><Bar dataKey="Free (No Charge)" stackId="t" fill={T.green}/><Bar dataKey="1–3 Days Overdue" stackId="t" fill={T.amber}/><Bar dataKey="4–7 Days Overdue" stackId="t" fill="#F97316"/><Bar dataKey="7+ Days Overdue" stackId="t" fill={T.red} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></div>
-        </>;
-      })()}
     </ChartBox>
 
     <Card style={{marginTop:12}}>
@@ -336,8 +343,8 @@ function CarrierPage({setPage}){
       </div>
       <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
         {view==="dwell"&&(<>
-          <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left"}}>{["Carrier","Vol","O.Det","O.Dem","Total O","Beyond FP","D.Dem","D.Det","Total D","Missing","Score"].map(h=><th key={h} style={{padding:"5px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Beyond FP","Missing","Score"].includes(h)?"right":"left"}}>{h}{h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}{h==="Beyond FP"&&<HoverTip text="Avg origin detention minus 5.1d free period. Positive = paid tiers on average."/>}</th>)}</tr></thead>
-          <tbody>{carriers.map(c=>{const sel=selCarrier===c.name;const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",color:T.sub,textAlign:"right"}}>{c.containers}</td><td style={{padding:"7px",color:T.amber,fontWeight:600}}>{c.avgODet.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:600}}>{c.avgODem.toFixed(1)}d</td><td style={{padding:"7px",fontWeight:600}}>{c.totalO.toFixed(1)}d</td><td style={{padding:"7px",color:c.beyondFP>0?T.red:T.green,fontWeight:600,textAlign:"right"}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td><td style={{padding:"7px",color:T.purple,fontWeight:600}}>{c.avgDDem.toFixed(1)}d</td><td style={{padding:"7px",color:T.red,fontWeight:600}}>{c.avgDDet.toFixed(1)}d</td><td style={{padding:"7px",fontWeight:600}}>{c.totalD.toFixed(1)}d</td><td style={{padding:"7px",color:c.missingMilestones/Math.max(c.containers,1)>3?T.amber:T.sub,textAlign:"right"}}>{c.missingMilestones}</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td></tr>;})}</tbody>
+          <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left"}}>{["Carrier","Vol","O.Det","O.Dem","Beyond FP","D.Dem","D.Det","Score"].map(h=><th key={h} style={{padding:"5px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Beyond FP","Score"].includes(h)?"right":"left"}}>{h}{h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}{h==="Beyond FP"&&<HoverTip text="Avg origin detention minus 5.1d free period. Positive = paid tiers on average."/>}</th>)}</tr></thead>
+          <tbody>{carriers.map(c=>{const sel=selCarrier===c.name;const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",color:T.sub,textAlign:"right"}}>{c.containers}</td><td style={{padding:"7px",color:T.amber,fontWeight:600}}>{c.avgODet.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:600}}>{c.avgODem.toFixed(1)}d</td><td style={{padding:"7px",color:c.beyondFP>0?T.red:T.green,fontWeight:600,textAlign:"right"}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td><td style={{padding:"7px",color:T.purple,fontWeight:600}}>{c.avgDDem.toFixed(1)}d</td><td style={{padding:"7px",color:T.red,fontWeight:600}}>{c.avgDDet.toFixed(1)}d</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td></tr>;})}</tbody>
         </>)}
         {view==="exceeding"&&(<>
           <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left"}}>{["Carrier","Total Vol","Past FP","% Past FP","Within FP","Avg Beyond (d)","Score"].map(h=><th key={h} style={{padding:"5px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Total Vol","Past FP","% Past FP","Within FP","Score"].includes(h)?"right":"left"}}>{h}</th>)}</tr></thead>
@@ -347,11 +354,6 @@ function CarrierPage({setPage}){
         {view==="cost"&&(<>
           <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left"}}>{["Carrier","Vol","Est. Cost","Cost/Container","Past FP","Avg Beyond (d)","Score"].map(h=><th key={h} style={{padding:"5px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Est. Cost","Cost/Container","Score"].includes(h)?"right":"left"}}>{h}{h==="Est. Cost"&&<HoverTip text="Estimated: (pastFPCount × beyondFP × $120) + (containers × avgDDem × $40) + (containers × avgDDet × $80). Directional only."/>}</th>)}</tr></thead>
           <tbody>{[...carriers].sort((a,b)=>b.estCost-a.estCost).map(c=>{const sel=selCarrier===c.name;const cpC=Math.round(c.estCost/c.containers);const rc=cpC>500?T.red:cpC>200?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td><td style={{padding:"7px",textAlign:"right",fontWeight:700,color:T.red}}>{fmt(c.estCost)}</td><td style={{padding:"7px",textAlign:"right",color:cpC>500?T.red:cpC>200?T.amber:T.sub,fontWeight:600}}>{fmt(cpC)}</td><td style={{padding:"7px",color:T.sub}}>{c.pastFPCount}</td><td style={{padding:"7px",color:c.beyondFP>0?T.red:T.sub,fontWeight:600}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{fmt(c.estCost)}</SolidBadge></td></tr>;})}
-          </tbody>
-        </>)}
-        {view==="tier"&&(<>
-          <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left"}}>{["Carrier","Vol","Free","1–3d Over","4–7d Over","7d+ Over","% Overdue","Score"].map(h=><th key={h} style={{padding:"5px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Free","1–3d Over","4–7d Over","7d+ Over","% Overdue","Score"].includes(h)?"right":"left"}}>{h}</th>)}</tr></thead>
-          <tbody>{[...carriers].sort((a,b)=>(b.tier1+b.tier2+b.tier3)-(a.tier1+a.tier2+a.tier3)).map(c=>{const sel=selCarrier===c.name;const paidPct=+(c.pastFPPct).toFixed(1);const rc=paidPct>50?T.red:paidPct>25?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td><td style={{padding:"7px",textAlign:"right",color:T.green,fontWeight:600}}>{c.tierIn}</td><td style={{padding:"7px",textAlign:"right",color:T.amber,fontWeight:600}}>{c.tier1}</td><td style={{padding:"7px",textAlign:"right",color:"#F97316",fontWeight:600}}>{c.tier2}</td><td style={{padding:"7px",textAlign:"right",color:T.red,fontWeight:600}}>{c.tier3}</td><td style={{padding:"7px",textAlign:"right",color:rc,fontWeight:700}}>{paidPct}%</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{paidPct>50?"Deep":"Moderate"}</SolidBadge></td></tr>;})}
           </tbody>
         </>)}
       </table>
