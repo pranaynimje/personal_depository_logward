@@ -78,39 +78,44 @@ function HomePage({setPage}){
   const topBurn=CDATA.topRisk.slice(0,5).reduce((s,c)=>s+Math.round((c.cost3d-c.cost)/3),0);
 
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
-    {/* HERO ROW: Main metric + Alert panel */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16,marginBottom:12}}>
-      <Card style={{padding:"16px 20px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            <div style={{display:"flex",alignItems:"baseline",gap:12}}><span style={{fontSize:28,fontWeight:700,color:T.text,letterSpacing:"-0.5px"}}>{fmt(BASE.grandTotal)}</span><span style={{fontSize:12,fontWeight:600,color:mom.color}}>{mom.arrow} {Math.abs(mom.v)}% MoM</span></div>
-            <div style={{fontSize:10,color:T.sub,marginTop:2}}>Total D&D Exposure</div>
-          </div>
-          <div style={{textAlign:"right",background:T.blueBg,borderRadius:10,padding:"8px 12px"}}>
-            <div style={{fontSize:18,fontWeight:700,color:T.blue}}>{BASE.summary.inProgress.toLocaleString()}</div>
-            <div style={{fontSize:9,color:T.sub}}>Active Containers</div>
-            <div style={{fontSize:9,color:T.dim}}>{BASE.summary.totalContainers.toLocaleString()} total</div>
-          </div>
+    {/* HERO ROW */}
+    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:12,marginBottom:12}}>
+      {/* Total exposure */}
+      <Card style={{padding:"16px 20px",borderLeft:"4px solid #1A1D26"}}>
+        <div style={{fontSize:9,fontWeight:600,color:T.sub,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Total D&D Exposure</div>
+        <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+          <span style={{fontSize:30,fontWeight:800,color:T.text,letterSpacing:"-0.5px"}}>{fmt(BASE.grandTotal)}</span>
+          <span style={{fontSize:11,fontWeight:600,color:mom.color}}>{mom.arrow} {Math.abs(mom.v)}% MoM</span>
         </div>
-        <div style={{display:"flex",gap:16,marginTop:12}}>
-          {[{l:"Origin",v:fmt(BASE.totalOriginCost),s:originPct+"% of total",c:T.amber},{l:"Destination",v:fmt(BASE.totalDestCost),s:(100-originPct)+"% of total",c:T.purple}].map(k=><div key={k.l} style={{borderLeft:"3px solid "+k.c,paddingLeft:8}}><div style={{fontSize:14,fontWeight:600,color:T.text}}>{k.v}</div><div style={{fontSize:10,color:T.sub}}>{k.l} | {k.s}</div></div>)}
+        <div style={{display:"flex",gap:12,marginTop:10}}>
+          <div style={{borderLeft:"3px solid "+T.amber,paddingLeft:8}}><div style={{fontSize:13,fontWeight:700}}>{fmt(BASE.totalOriginCost)}</div><div style={{fontSize:9,color:T.sub}}>Origin · {originPct}%</div></div>
+          <div style={{borderLeft:"3px solid "+T.purple,paddingLeft:8}}><div style={{fontSize:13,fontWeight:700}}>{fmt(BASE.totalDestCost)}</div><div style={{fontSize:9,color:T.sub}}>Destination · {100-originPct}%</div></div>
         </div>
       </Card>
-      <Card style={{padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"center",borderTop:"3px solid "+T.red,background:"#fff"}}>
-        <div style={{display:"flex",gap:12,marginBottom:8}}>
-          <div style={{flex:1,background:T.redBg,borderRadius:8,padding:"8px 10px",borderLeft:"3px solid "+T.red}}>
-            <div style={{fontSize:20,fontWeight:800,color:T.red}}>{fth.expired.toLocaleString()}</div>
-            <div style={{fontSize:10,fontWeight:700,color:T.red}}>Overdue</div>
-            <div style={{fontSize:9,color:T.sub,marginTop:1}}>Free period expired — charges accruing</div>
-          </div>
-          <div style={{flex:1,background:T.amberBg,borderRadius:8,padding:"8px 10px",borderLeft:"3px solid "+T.amber}}>
-            <div style={{fontSize:20,fontWeight:800,color:T.amber}}>{fth.red}</div>
-            <div style={{fontSize:10,fontWeight:700,color:T.amber}}>At Risk</div>
-            <div style={{fontSize:9,color:T.sub,marginTop:1}}>Expiring within 48 hours</div>
-          </div>
-        </div>
-        <div style={{fontSize:13,fontWeight:700,color:T.red}}>{"Est. daily burn: "+fmt(topBurn)+"/day"}</div>
-        <div onClick={()=>document.getElementById("freeTimeHealth")&&document.getElementById("freeTimeHealth").scrollIntoView({behavior:"smooth"})} style={{fontSize:10,color:T.blueL,fontWeight:600,cursor:"pointer",marginTop:6}}>{"See Free Time Breakdown ↓"}</div>
+      {/* Active containers */}
+      <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.blue,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <div style={{fontSize:9,fontWeight:600,color:T.sub,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Active Containers</div>
+        <div style={{fontSize:26,fontWeight:800,color:T.blue}}>{BASE.summary.inProgress.toLocaleString()}</div>
+        <div style={{fontSize:9,color:T.dim,marginTop:2}}>{BASE.summary.totalContainers.toLocaleString()} total in portfolio</div>
+      </Card>
+      {/* Overdue */}
+      <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.red,background:"#FFF5F5",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <div style={{fontSize:9,fontWeight:600,color:T.red,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Overdue</div>
+        <div style={{fontSize:26,fontWeight:800,color:T.red}}>{fth.expired.toLocaleString()}</div>
+        <div style={{fontSize:9,color:T.sub,marginTop:2}}>Free period expired</div>
+      </Card>
+      {/* At Risk */}
+      <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.amber,background:T.amberBg,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <div style={{fontSize:9,fontWeight:600,color:T.amber,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>At Risk</div>
+        <div style={{fontSize:26,fontWeight:800,color:T.amber}}>{fth.red}</div>
+        <div style={{fontSize:9,color:T.sub,marginTop:2}}>Expiring within 48h</div>
+      </Card>
+      {/* Daily burn */}
+      <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.green,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <div style={{fontSize:9,fontWeight:600,color:T.sub,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Est. Daily Burn</div>
+        <div style={{fontSize:22,fontWeight:800,color:T.red}}>{fmt(topBurn)}</div>
+        <div style={{fontSize:9,color:T.sub,marginTop:2}}>per day if no action</div>
+        <div onClick={()=>document.getElementById("freeTimeHealth")&&document.getElementById("freeTimeHealth").scrollIntoView({behavior:"smooth"})} style={{fontSize:9,color:T.blueL,fontWeight:600,cursor:"pointer",marginTop:6}}>{"See breakdown ↓"}</div>
       </Card>
     </div>
 
