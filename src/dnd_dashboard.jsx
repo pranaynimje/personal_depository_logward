@@ -456,14 +456,14 @@ function OptimizerPage(){
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <SH title="Cost Optimizer" sub="Forecast-based cost prediction + container prioritization planner for resource deployment decisions"/>
     {/* FORECAST DATE — global control */}
-    <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:"linear-gradient(90deg,"+T.blueBg+" 0%,#fff 100%)",borderRadius:10,border:"1.5px solid "+T.blue+"40",marginBottom:14}}>
-      <div style={{display:"flex",flexDirection:"column",gap:3}}>
+    <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:T.card2,borderRadius:10,border:"1.5px solid "+T.blue+"50",marginBottom:14}}>
+      <div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0}}>
         <div style={{fontSize:9,fontWeight:700,color:T.blue,textTransform:"uppercase",letterSpacing:"0.5px"}}>Forecast Date</div>
-        <input type="date" value={predDate} onChange={e=>setPredDate(e.target.value)} min="2025-10-02" max="2026-06-30" style={{border:"1.5px solid "+T.blue,borderRadius:7,padding:"7px 12px",fontSize:13,fontWeight:700,outline:"none",background:"#fff"}}/>
+        <input type="date" value={predDate} onChange={e=>setPredDate(e.target.value)} min="2025-10-02" max="2026-06-30" style={{border:"1.5px solid "+T.blue,borderRadius:7,padding:"7px 12px",fontSize:13,fontWeight:700,outline:"none",background:"#fff",color:T.text,colorScheme:"light"}}/>
       </div>
-      <div style={{width:1,height:44,background:T.border}}/>
+      <div style={{width:1,height:44,background:T.border,flexShrink:0}}/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,flex:1}}>
-        <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.blue}}><div style={{fontSize:9,color:T.sub}}>Days from Ref</div><div style={{fontSize:22,fontWeight:700,color:T.blue}}>{predDays}</div></div>
+        <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.blue}}><div style={{fontSize:9,color:T.sub}}>Days from Reference</div><div style={{fontSize:22,fontWeight:700,color:T.blue}}>{predDays}</div></div>
         <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.text}}><div style={{fontSize:9,color:T.sub}}>Containers Affected</div><div style={{fontSize:22,fontWeight:700,color:T.text}}>{Math.max(1,Math.round(predDays*2.5))}</div></div>
         <div style={{background:T.redBg,borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.red}}><div style={{fontSize:9,color:T.red}}>If No Action</div><div style={{fontSize:22,fontWeight:700,color:T.red}}>{fmt(predCost.reduce((s,c)=>s+c.predicted,0))}</div></div>
       </div>
@@ -545,21 +545,21 @@ function OptimizerPage(){
 
       {/* CONTAINER DETAIL TABLE */}
       {(()=>{
-        const SortTh=({col,label,right,aCol,aDir,onSort})=>{const active=aCol===col;return <th onClick={()=>onSort(col)} style={{padding:"6px 8px",textAlign:right?"right":"left",color:active?T.blue:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap"}}>{label}{active?aDir==="desc"?" ↓":" ↑":" ↕"}</th>;};
         const sortFn=(data,col,dir)=>[...data].sort((a,b)=>dir==="desc"?b[col]-a[col]:a[col]-b[col]);
-        const cols=[{col:"todayCost",label:"Avoidable",right:true},{col:"sav3d",label:"+3d",right:true},{col:"sav7d",label:"+7d",right:true},{col:"daily",label:"$/day",right:true},{col:"risk",label:"Risk",right:true}];
         const sortedA=sortFn(groupA.active,aSortCol,aSortDir);const sortedB=sortFn(groupB.active,bSortCol,bSortDir);
         const mkOnSort=(setCol,setDir,col,curCol,curDir)=>()=>{if(col===curCol)setDir(d=>d==="desc"?"asc":"desc");else{setCol(col);setDir("desc");}};
-        const ContainerRow=({c,dimmed,riskColor})=><tr style={{background:"#fff",opacity:dimmed?.35:1,borderBottom:"1px solid "+T.border+"30"}}>
+        const SortTh=({col,label,sCol,sDir,onSort})=>{const active=sCol===col;return <th onClick={()=>onSort(col)} style={{padding:"6px 8px",textAlign:"right",color:active?T.blue:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap"}}>{label}{active?sDir==="desc"?" ↓":" ↑":" ↕"}</th>;};
+        const ContainerRow=({c,dimmed})=><tr style={{background:"#fff",opacity:dimmed?.35:1,borderBottom:"1px solid "+T.border+"30"}}>
           <td style={{padding:"5px 8px",fontFamily:"monospace",fontSize:9,fontWeight:600,whiteSpace:"nowrap"}}>{c.cn}</td>
           <td style={{padding:"5px 8px",fontSize:9,color:T.sub}}>{c.ca}</td>
           <td style={{padding:"5px 8px",fontSize:9,color:T.sub,whiteSpace:"nowrap"}}>{c.po+"→"+c.pd}</td>
           <td style={{padding:"5px 8px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
           <td style={{padding:"5px 8px",fontSize:9,color:c.fpStatus==="Expired"?T.red:c.fpStatus==="Green"?T.green:T.amber,fontWeight:600}}>{c.fpStatus}</td>
-          <td style={{padding:"5px 8px",textAlign:"right",fontWeight:700,color:T.green,fontSize:10}}>{fmt(c.todayCost)}</td>
-          <td style={{padding:"5px 8px",textAlign:"right",color:T.sub,fontSize:9}}>{fmt(c.sav3d)}</td>
-          <td style={{padding:"5px 8px",textAlign:"right",color:T.sub,fontSize:9}}>{fmt(c.sav7d)}</td>
-          <td style={{padding:"5px 8px",textAlign:"right",color:T.red,fontSize:9,fontWeight:600}}>{"$"+c.daily}</td>
+          <td style={{padding:"5px 8px",textAlign:"right"}}>
+            <div style={{fontWeight:700,color:T.green,fontSize:10}}>{fmt(c.todayCost)}</div>
+            <div style={{fontSize:8,color:T.sub,marginTop:1}}>{"3d: "+fmt(c.sav3d)+" · 7d: "+fmt(c.sav7d)}</div>
+          </td>
+          <td style={{padding:"5px 8px",textAlign:"right",color:T.red,fontSize:9,fontWeight:600}}>{"$"+c.daily+"/d"}</td>
           <td style={{padding:"5px 8px",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:c.risk>=50?T.amber:T.green}>{c.risk}</SolidBadge></td>
         </tr>;
         return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}}>
@@ -574,14 +574,16 @@ function OptimizerPage(){
                     <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>Lane</th>
                     <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>Cat</th>
                     <th style={{padding:"6px 8px",textAlign:"left",color:T.dim,fontSize:9,fontWeight:600}}>FP Status</th>
-                    {cols.map(c=><SortTh key={c.col} col={c.col} label={c.label} right={c.right} aCol={sCol} aDir={sDir} onSort={mkOnSort(setCol,setDir,c.col,sCol,sDir)}/>)}
+                    <SortTh col="todayCost" label="Avoidable (3d·7d)" sCol={sCol} sDir={sDir} onSort={mkOnSort(setCol,setDir,"todayCost",sCol,sDir)}/>
+                    <SortTh col="daily" label="$/day" sCol={sCol} sDir={sDir} onSort={mkOnSort(setCol,setDir,"daily",sCol,sDir)}/>
+                    <SortTh col="risk" label="Risk" sCol={sCol} sDir={sDir} onSort={mkOnSort(setCol,setDir,"risk",sCol,sDir)}/>
                   </tr>
                 </thead>
                 <tbody>
                   {data.map(c=><ContainerRow key={c.cn} c={c}/>)}
                   {label==="A"&&groupA.excluded.map(c=><ContainerRow key={c.cn} c={c} dimmed/>)}
                   {label==="B"&&groupB.excluded.map(c=><ContainerRow key={c.cn} c={c} dimmed/>)}
-                  {data.length===0&&<tr><td colSpan={10} style={{padding:"16px",textAlign:"center",color:T.dim,fontSize:10}}>No containers match current filters.</td></tr>}
+                  {data.length===0&&<tr><td colSpan={8} style={{padding:"16px",textAlign:"center",color:T.dim,fontSize:10}}>No containers match current filters.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -721,8 +723,15 @@ function SurchargePage({setPage,selectedLane,clearLane}){
   const cats=[{name:"Detention — Origin",side:"Origin",total:49169,containers:261,avgFP:5.1,color:T.amber},{name:"Detention — Dest",side:"Dest",total:1955,containers:8,avgFP:6.0,color:T.amber},{name:"Demurrage — Origin",side:"Origin",total:22353,containers:52,avgFP:3.1,color:T.purple},{name:"Demurrage — Dest",side:"Dest",total:5144,containers:12,avgFP:3.0,color:T.purple},{name:"Storage — Origin",side:"Origin",total:3075,containers:23,avgFP:3.1,color:T.green},{name:"Storage — Dest",side:"Dest",total:1295,containers:9,avgFP:3.0,color:T.green},{name:"Combined — Origin",side:"Origin",total:99565,containers:212,avgFP:9.9,color:T.red},{name:"Combined — Dest",side:"Dest",total:1814,containers:4,avgFP:12.0,color:T.red}];
   const detO=49169,demO=22353,dndO=99565,detD=1955,demD=5144,dndD=1814;
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
-    <SH title="Surcharge Intelligence" sub="Portfolio-level rate structure. Select a lane from Historical to build your negotiation position."/>
-    <LaneFocusPanel lane={activeLane} onClear={()=>{setActiveLane(null);if(clearLane)clearLane();}} onBack={activeLane?()=>{setActiveLane(null);if(clearLane)clearLane();setPage("history");}:null}/>
+    <SH title="Surcharge Intelligence" sub={activeLane?"Lane-level analysis for "+activeLane.lane+". Click a different lane in Historical to switch.":"Portfolio-level rate structure. Click any lane row in Historical to drill in."}/>
+    {activeLane&&<div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:T.blueBg,borderRadius:8,marginBottom:14,border:"1px solid "+T.blue+"30"}}>
+      <span style={{fontSize:13,fontWeight:700,fontFamily:"monospace",color:T.text}}>{activeLane.lane}</span>
+      <Badge color={T.blue}>{activeLane.containers} containers</Badge>
+      {(activeLane.surchargePct||35)>35?<SolidBadge color={T.red}>{"D&D "+(activeLane.surchargePct||35)+"% of cost"}</SolidBadge>:<SolidBadge color={T.green}>{"D&D "+(activeLane.surchargePct||35)+"%"}</SolidBadge>}
+      <div style={{flex:1}}/>
+      <button onClick={()=>{setActiveLane(null);if(clearLane)clearLane();setPage("history");}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid "+T.border,background:"#fff",color:T.sub,fontSize:9,fontWeight:600,cursor:"pointer"}}>← Back to Historical</button>
+      <button onClick={()=>{setActiveLane(null);if(clearLane)clearLane();}} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><X size={14} color={T.dim}/></button>
+    </div>}
 
     {activeLane?(()=>{
       // Portfolio averages for benchmark
@@ -775,8 +784,9 @@ function SurchargePage({setPage,selectedLane,clearLane}){
           </Card>
           {/* Rate Structure Recommendation */}
           <Card>
-            <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Rate Structure for This Lane</div>
-            <div style={{fontSize:11,color:T.sub,marginBottom:10}}>Should this lane use Combined D&D or separate Detention + Demurrage rates?</div>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Rate Structure — {activeLane.lane}</div>
+            <div style={{fontSize:11,color:T.sub,marginBottom:4}}>Should this lane use Combined D&D or separate Detention + Demurrage rates?</div>
+            <div style={{fontSize:10,color:T.amber,fontWeight:600,marginBottom:10,background:T.amberBg,borderRadius:5,padding:"4px 8px",display:"inline-block"}}>Note: this recommendation applies across all contracts on this lane. Individual carrier contracts may vary.</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
               {[{t:"O. Detention",v:activeLane.avgODet.toFixed(1)+"d",fp:"5.1d",over:oDetOver,c:T.amber},{t:"O. Demurrage",v:activeLane.avgODem.toFixed(1)+"d",fp:"3.1d",over:oDemOver,c:T.purple},{t:"Combined FP",v:combinedFP+"d",fp:"vs "+combinedTotal.toFixed(1)+"d total",over:!combinedSaves,c:T.red}].map((x,i)=><div key={i} style={{background:T.card2,borderRadius:8,padding:"8px 10px",borderTop:"2px solid "+(x.over?T.red:T.green)}}>
                 <div style={{fontSize:9,color:T.sub}}>{x.t}</div>
