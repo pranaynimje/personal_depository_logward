@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend, Area, AreaChart, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend, Area, AreaChart, ReferenceLine, ScatterChart, Scatter, ZAxis } from "recharts";
 import { AlertTriangle, TrendingUp, TrendingDown, Anchor, Ship, Clock, DollarSign, Package, Target, Zap, Layers, Calendar, Activity, MapPin, Truck, Box, AlertCircle, X, ChevronDown, HelpCircle, ArrowRight, Download } from "lucide-react";
 
 // ═══ DATA ═══
@@ -12,7 +12,7 @@ const BASE={
   freeTimeHealth:{red:35,yellow:24,green:205,expired:3780},
   costMatrix:{detention_origin:{total:49169,withCost:261,avgFP:5.1},detention_destination:{total:1955,withCost:8,avgFP:6.0},demurrage_origin:{total:22353,withCost:52,avgFP:3.1},demurrage_destination:{total:5144,withCost:12,avgFP:3.0},storage_origin:{total:3075,withCost:23,avgFP:3.1},storage_destination:{total:1295,withCost:9,avgFP:3.0},dnd_origin:{total:99565,withCost:212,avgFP:9.9},dnd_destination:{total:1814,withCost:4,avgFP:12.0},demurrageStorage_origin:{total:8420,withCost:31,avgFP:4.2},demurrageStorage_destination:{total:2190,withCost:7,avgFP:4.0},detentionDemurrage_origin:{total:34610,withCost:87,avgFP:7.8},detentionDemurrage_destination:{total:3280,withCost:11,avgFP:8.5},detentionDemurrageStorage_origin:{total:18740,withCost:44,avgFP:11.2},detentionDemurrageStorage_destination:{total:890,withCost:3,avgFP:13.0}},
   mom:{prevTotal:168420,currTotal:184370,prevOrigin:159800,currOrigin:174162,prevDest:8620,currDest:10208},
-  carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,missingMilestones:815}},
+  carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,avgOSto:2.8,avgDSto:1.9,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,avgOSto:1.2,avgDSto:1.4,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,avgOSto:2.1,avgDSto:1.6,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,avgOSto:2.6,avgDSto:2.1,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,avgOSto:1.9,avgDSto:1.5,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,avgOSto:0.8,avgDSto:0.9,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,avgOSto:0.5,avgDSto:1.2,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,avgOSto:2.2,avgDSto:1.7,missingMilestones:815}},
   topLanes:[
     {lane:"DEHAM-CNSHA",containers:34,avgODet:2.52,avgODem:0.94,avgDDem:3.12,avgDDet:5.46,freightPct:72,surchargePct:28},
     {lane:"DEHAM-CNYTN",containers:28,avgODet:7.85,avgODem:0.71,avgDDem:2.07,avgDDet:5.27,freightPct:65,surchargePct:35},
@@ -285,9 +285,10 @@ function CostPage({setPage}){
 
 // ═══ MODULE 3: CARRIER INTEL ═══
 const CARRIER_VIEWS=[
-  {id:"dwell",     label:"Avg Dwell Time"},
-  {id:"exceeding", label:"Containers Exceeding Free Days"},
-  {id:"cost",      label:"Cost Exposure by Carrier"},
+  {id:"detention", label:"Detention"},
+  {id:"demurrage", label:"Demurrage"},
+  {id:"storage",   label:"Storage"},
+  {id:"combined",  label:"Combined D&D"},
 ];
 
 function CarrierPage({setPage}){
@@ -302,25 +303,44 @@ function CarrierPage({setPage}){
     const tier1=Math.round(d.containers*Math.min(pastFPPct/100,0.3));
     const tier2=Math.round(d.containers*Math.max(0,Math.min(pastFPPct/100-0.3,0.25)));
     const tier3=Math.round(d.containers*Math.max(0,pastFPPct/100-0.55));
-    return{name:n,...d,totalO:d.avgODet+d.avgODem,totalD:d.avgDDem+d.avgDDet,beyondFP,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,
+    return{name:n,...d,avgOSto:d.avgOSto||0,avgDSto:d.avgDSto||0,
+      totalO:d.avgODet+d.avgODem,totalD:d.avgDDem+d.avgDDet,beyondFP,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,
       risk:Math.min(100,Math.round((d.avgODet+d.avgODem)*8+(d.avgDDem+d.avgDDet)*5+d.missingMilestones/d.containers*2))};
   }).sort((a,b)=>b.totalO-a.totalO),[]);
 
   const selStyle={border:"1px solid "+T.border,borderRadius:8,padding:"6px 12px",fontSize:11,color:T.text,background:"#fff",cursor:"pointer",outline:"none",fontWeight:600};
 
-  const chartData=useMemo(()=>{
-    if(view==="dwell") return carriers.map(c=>({name:c.name,"O.Det":c.avgODet,"O.Dem":c.avgODem,"O.Comb":+(c.avgODet+c.avgODem).toFixed(1),"D.Det":c.avgDDet,"D.Dem":c.avgDDem,"D.Comb":+(c.avgDDem+c.avgDDet).toFixed(1)}));
-    if(view==="exceeding") return carriers.map(c=>({name:c.name,"Past FP":c.pastFPCount,"Within FP":c.containers-c.pastFPCount}));
-    if(view==="cost") return carriers.map(c=>({name:c.name,"Est. Cost":c.estCost}));
-  },[view,carriers]);
+  // Per-view scatter config: x field, y field, free period thresholds, axis labels
+  const scatterCfg=useMemo(()=>({
+    detention: {xKey:"avgODet",yKey:"avgDDet",fpX:5.1,fpY:6.0,xLabel:"Origin Detention (days)",yLabel:"Dest Detention (days)"},
+    demurrage: {xKey:"avgODem",yKey:"avgDDem",fpX:3.1,fpY:3.0,xLabel:"Origin Demurrage (days)",yLabel:"Dest Demurrage (days)"},
+    storage:   {xKey:"avgOSto",yKey:"avgDSto",fpX:3.1,fpY:3.0,xLabel:"Origin Storage (days)",yLabel:"Dest Storage (days)"},
+    combined:  {xKey:"totalO", yKey:"totalD", fpX:9.9,fpY:9.0,xLabel:"Origin Combined (days)",yLabel:"Dest Combined (days)"},
+  }),[]);
 
-  const viewMeta={
-    dwell:{title:"Avg Dwell by Carrier (Days)",sub:"Left=Origin, Right=Destination. Reference line = 5.1d free period.",insight:(()=>{const wc=carriers[0];return wc.name+" origin dwell ("+wc.totalO.toFixed(1)+"d) is "+(wc.totalO/5.1).toFixed(1)+"× the free-period threshold. Biggest carrier-level cost driver.";})()},
-    exceeding:{title:"Containers Exceeding Free Period",sub:"Count of containers estimated past free period vs within it, per carrier.",insight:(()=>{const wc=[...carriers].sort((a,b)=>b.pastFPCount-a.pastFPCount)[0];return wc.name+" has the most containers past free period (~"+wc.pastFPCount+" of "+wc.containers+", "+wc.pastFPPct+"%). Prioritise this carrier for release action.";})()},
-    cost:{title:"Estimated D&D Cost Exposure by Carrier ($)",sub:"Estimated cost based on dwell beyond free period × daily rate. Directional — not billing data.",insight:(()=>{const wc=[...carriers].sort((a,b)=>b.estCost-a.estCost)[0];return wc.name+" carries the highest estimated exposure ("+fmt(wc.estCost)+"). Focus negotiation and release efforts here first.";})()},
-  };
+  const cfg=scatterCfg[view]||scatterCfg.detention;
 
-  const vm=viewMeta[view];
+  const chartData=useMemo(()=>carriers.map(c=>({
+    name:c.name, x:+c[cfg.xKey].toFixed(2), y:+c[cfg.yKey].toFixed(2),
+    z:c.containers, risk:c.risk, ...c
+  })),[view,carriers,cfg]);
+
+  const viewMeta=useMemo(()=>{
+    const worstBoth=([...chartData].filter(c=>c.x>cfg.fpX&&c.y>cfg.fpY).sort((a,b)=>(b.x+b.y)-(a.x+a.y))[0]);
+    const worstO=([...chartData].filter(c=>c.x>cfg.fpX&&c.y<=cfg.fpY).sort((a,b)=>b.x-a.x)[0]);
+    const insightText=worstBoth
+      ?worstBoth.name+" is in the top-right quadrant — over free period on both origin ("+worstBoth.x+"d) and destination ("+worstBoth.y+"d). Highest priority for negotiation."
+      :worstO?worstO.name+" exceeds origin free period ("+worstO.x+"d vs "+(cfg.fpX)+"d). Destination within limits — focus origin release action."
+      :"All carriers within free period on both sides for this category.";
+    const labels={detention:"Detention",demurrage:"Demurrage",storage:"Storage",combined:"Combined D&D"};
+    return {
+      title:labels[view]+" — Origin vs Destination Dwell",
+      sub:cfg.xLabel+" (X) · "+cfg.yLabel+" (Y) · Bubble size = container volume · Color = carrier risk score",
+      insight:insightText
+    };
+  },[view,chartData,cfg]);
+
+  const vm=viewMeta;
 
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
@@ -333,20 +353,54 @@ function CarrierPage({setPage}){
       </div>
     </div>
 
-    <ChartBox title={vm.title} sub={vm.sub} h={300} insight={vm.insight} nav={<NavLink text="See port and lane performance trends → Historical" onClick={()=>setPage("history")}/>}>
-      {view==="dwell"&&(<>
-        <div style={{display:"flex",gap:16,marginBottom:8,justifyContent:"flex-end",flexWrap:"wrap"}}>
-          {[{l:"Detention",c:T.amber},{l:"Demurrage",c:T.purple},{l:"Combined D&D",c:T.red}].map(x=><div key={x.l} style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:10,height:10,borderRadius:2,background:x.c}}/><span style={{fontSize:9,color:T.sub}}>{x.l}</span></div>)}
-          <div style={{borderLeft:"1px solid "+T.border,paddingLeft:8,display:"flex",gap:8}}><span style={{fontSize:9,color:T.sub}}>Left=Origin</span><span style={{fontSize:9,color:T.sub}}>Right=Dest</span></div>
-        </div>
-        <div style={{height:250}}><ResponsiveContainer><BarChart data={chartData} barSize={14} barGap={1} barCategoryGap="30%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10}/><ReferenceLine y={5.1} stroke={T.red} strokeDasharray="6 3" label={{value:"FP: 5.1d",position:"right",fontSize:9,fill:T.red}}/><Tooltip content={({active,payload,label})=>{if(!active||!payload||!payload[0])return null;const d=payload[0].payload;return <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,.08)"}}><div style={{fontSize:11,fontWeight:700,marginBottom:4}}>{label}</div><div style={{fontSize:9,fontWeight:700,color:T.amber,marginBottom:2}}>Origin</div><div style={{fontSize:9,color:T.sub}}>{"Det: "+d["O.Det"]+"d | Dem: "+d["O.Dem"]+"d | Comb: "+d["O.Comb"]+"d"}</div><div style={{fontSize:9,fontWeight:700,color:T.purple,marginTop:4,marginBottom:2}}>Destination</div><div style={{fontSize:9,color:T.sub}}>{"Det: "+d["D.Det"]+"d | Dem: "+d["D.Dem"]+"d | Comb: "+d["D.Comb"]+"d"}</div></div>;}}/><Bar dataKey="O.Det" stackId="origin" fill={T.amber}/><Bar dataKey="O.Dem" stackId="origin" fill={T.purple}/><Bar dataKey="O.Comb" stackId="origin" fill={T.red} radius={[3,3,0,0]}/><Bar dataKey="D.Det" stackId="dest" fill={T.amber}/><Bar dataKey="D.Dem" stackId="dest" fill={T.purple}/><Bar dataKey="D.Comb" stackId="dest" fill={T.red} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></div>
-      </>)}
-      {view==="exceeding"&&(
-        <div style={{height:250}}><ResponsiveContainer><BarChart data={chartData} barSize={20} barCategoryGap="35%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10}/><Tooltip content={({active,payload,label})=>{if(!active||!payload?.length)return null;const carr=carriers.find(c=>c.name===label);return <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,.08)"}}><div style={{fontSize:11,fontWeight:700,marginBottom:4}}>{label}</div><div style={{fontSize:9,color:T.red}}>{"Past FP: "+carr.pastFPCount+" containers ("+carr.pastFPPct+"%)"}</div><div style={{fontSize:9,color:T.green}}>{"Within FP: "+(carr.containers-carr.pastFPCount)+" containers"}</div></div>;}}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/><Bar dataKey="Past FP" stackId="a" fill={T.red}/><Bar dataKey="Within FP" stackId="a" fill={T.green} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></div>
-      )}
-      {view==="cost"&&(
-        <div style={{height:250}}><ResponsiveContainer><BarChart data={[...chartData].sort((a,b)=>b["Est. Cost"]-a["Est. Cost"])} barSize={22} barCategoryGap="35%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>"$"+Math.round(v/1000)+"k"}/><Tooltip content={({active,payload,label})=>{if(!active||!payload?.length)return null;return <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,.08)"}}><div style={{fontSize:11,fontWeight:700,marginBottom:4}}>{label}</div><div style={{fontSize:9,color:T.red}}>{"Est. Exposure: "+fmt(payload[0].value)}</div></div>;}}/><Bar dataKey="Est. Cost" fill={T.red} radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div>
-      )}
+    <ChartBox title={vm.title} sub={vm.sub} h={340} insight={vm.insight} nav={<NavLink text="See port and lane performance trends → Historical" onClick={()=>setPage("history")}/>}>
+      {(()=>{
+        const rFromZ=z=>Math.min(18,4+Math.sqrt(z/50));
+        const riskCol=r=>r>70?T.red:r>40?T.amber:T.green;
+        const fpX=cfg.fpX;const fpY=cfg.fpY;
+        // axis domain with padding
+        const xs=chartData.map(c=>c.x);const ys=chartData.map(c=>c.y);
+        const xMax=+(Math.max(...xs)*1.25+0.5).toFixed(1);const yMax=+(Math.max(...ys)*1.25+0.5).toFixed(1);
+        return <div style={{position:"relative",height:290}}>
+          {/* Quadrant corner labels */}
+          <div style={{position:"absolute",top:6,right:8,fontSize:9,fontWeight:700,color:T.red,opacity:.7,pointerEvents:"none",zIndex:5}}>Both Over FP ▲</div>
+          <div style={{position:"absolute",top:6,left:60,fontSize:9,fontWeight:700,color:T.amber,opacity:.7,pointerEvents:"none",zIndex:5}}>▲ Dest Focus</div>
+          <div style={{position:"absolute",bottom:30,right:8,fontSize:9,fontWeight:700,color:T.amber,opacity:.7,pointerEvents:"none",zIndex:5}}>Origin Focus ▶</div>
+          <div style={{position:"absolute",bottom:30,left:60,fontSize:9,fontWeight:700,color:T.green,opacity:.7,pointerEvents:"none",zIndex:5}}>◉ Best Performer</div>
+          <ResponsiveContainer width="100%" height={290}>
+            <ScatterChart margin={{top:20,right:30,bottom:30,left:10}}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/>
+              <XAxis type="number" dataKey="x" domain={[0,xMax]} name={cfg.xLabel} stroke={T.dim} fontSize={9}
+                label={{value:cfg.xLabel,position:"insideBottom",offset:-16,fontSize:9,fill:T.sub}}/>
+              <YAxis type="number" dataKey="y" domain={[0,yMax]} name={cfg.yLabel} stroke={T.dim} fontSize={9}
+                label={{value:cfg.yLabel,angle:-90,position:"insideLeft",offset:16,fontSize:9,fill:T.sub}}/>
+              <ZAxis dataKey="z" range={[150,700]} name="Containers"/>
+              <ReferenceLine x={fpX} stroke={T.red} strokeDasharray="5 3" strokeWidth={1.5}
+                label={{value:"Origin FP "+fpX+"d",position:"top",fontSize:8,fill:T.red}}/>
+              <ReferenceLine y={fpY} stroke={T.purple} strokeDasharray="5 3" strokeWidth={1.5}
+                label={{value:"Dest FP "+fpY+"d",position:"right",fontSize:8,fill:T.purple}}/>
+              <Tooltip content={({active,payload})=>{
+                if(!active||!payload?.length)return null;
+                const d=payload[0].payload;
+                return <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,.1)",minWidth:160}}>
+                  <div style={{fontSize:12,fontWeight:700,marginBottom:6,color:riskCol(d.risk)}}>{d.name}</div>
+                  <div style={{fontSize:10,color:T.sub,marginBottom:2}}>{"Origin: "+d.x+"d  (FP "+fpX+"d)"}</div>
+                  <div style={{fontSize:10,color:T.sub,marginBottom:2}}>{"Dest: "+d.y+"d  (FP "+fpY+"d)"}</div>
+                  <div style={{fontSize:10,color:T.sub,marginBottom:2}}>{"Containers: "+d.z}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:riskCol(d.risk),marginTop:4}}>{"Risk score: "+d.risk}</div>
+                </div>;
+              }}/>
+              <Scatter data={chartData} shape={({cx,cy,payload})=>{
+                const r=rFromZ(payload.z);const col=riskCol(payload.risk);
+                return <g>
+                  <circle cx={cx} cy={cy} r={r} fill={col} fillOpacity={0.72} stroke="#fff" strokeWidth={1.5}/>
+                  <text x={cx} y={cy-r-4} textAnchor="middle" fontSize={9} fontWeight={700} fill={T.text}>{payload.name}</text>
+                </g>;
+              }}/>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>;
+      })()}
     </ChartBox>
 
     <Card style={{marginTop:12}}>
@@ -354,22 +408,40 @@ function CarrierPage({setPage}){
         <div><div style={{fontSize:14,fontWeight:600}}>Carrier Scorecard <span style={{fontSize:10,fontWeight:400,color:T.blue}}>— click to drill down</span></div>
         <div style={{fontSize:11,color:T.sub}}>Carrier scores are for evaluation only. Business relationships and other factors should inform decisions.</div></div>
       </div>
-      <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
-        {view==="dwell"&&(<>
-          <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left",background:T.card2}}>{["Carrier","Vol","O.Det","O.Dem","Beyond FP","D.Dem","D.Det","Score"].map(h=><th key={h} style={{padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Beyond FP","Score"].includes(h)?"right":"left"}}>{h}{h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}{h==="Beyond FP"&&<HoverTip text="Avg origin detention minus 5.1d free period. Positive = paid tiers on average."/>}</th>)}</tr></thead>
-          <tbody>{carriers.map(c=>{const sel=selCarrier===c.name;const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",color:T.sub,textAlign:"right"}}>{c.containers}</td><td style={{padding:"7px",color:T.amber,fontWeight:600}}>{c.avgODet.toFixed(1)}d</td><td style={{padding:"7px",color:T.purple,fontWeight:600}}>{c.avgODem.toFixed(1)}d</td><td style={{padding:"7px",color:c.beyondFP>0?T.red:T.green,fontWeight:600,textAlign:"right"}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td><td style={{padding:"7px",color:T.purple,fontWeight:600}}>{c.avgDDem.toFixed(1)}d</td><td style={{padding:"7px",color:T.red,fontWeight:600}}>{c.avgDDet.toFixed(1)}d</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td></tr>;})}</tbody>
-        </>)}
-        {view==="exceeding"&&(<>
-          <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left",background:T.card2}}>{["Carrier","Total Vol","Past FP","% Past FP","Within FP","Avg Beyond (d)","Score"].map(h=><th key={h} style={{padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Total Vol","Past FP","% Past FP","Within FP","Score"].includes(h)?"right":"left"}}>{h}</th>)}</tr></thead>
-          <tbody>{[...carriers].sort((a,b)=>b.pastFPCount-a.pastFPCount).map(c=>{const sel=selCarrier===c.name;const rc=c.pastFPPct>50?T.red:c.pastFPPct>25?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td><td style={{padding:"7px",textAlign:"right",color:T.red,fontWeight:700}}>{c.pastFPCount}</td><td style={{padding:"7px",textAlign:"right",color:c.pastFPPct>50?T.red:c.pastFPPct>25?T.amber:T.green,fontWeight:700}}>{c.pastFPPct}%</td><td style={{padding:"7px",textAlign:"right",color:T.green}}>{c.containers-c.pastFPCount}</td><td style={{padding:"7px",color:c.beyondFP>0?T.red:T.sub,fontWeight:600}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.pastFPPct>50?"High":c.pastFPPct>25?"Mid":"Low"}</SolidBadge></td></tr>;})}
-          </tbody>
-        </>)}
-        {view==="cost"&&(<>
-          <thead><tr style={{color:T.dim,fontSize:10,textAlign:"left",background:T.card2}}>{["Carrier","Vol","Est. Cost","Cost/Container","Past FP","Avg Beyond (d)","Score"].map(h=><th key={h} style={{padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Est. Cost","Cost/Container","Score"].includes(h)?"right":"left"}}>{h}{h==="Est. Cost"&&<HoverTip text="Estimated: (pastFPCount × beyondFP × $120) + (containers × avgDDem × $40) + (containers × avgDDet × $80). Directional only."/>}</th>)}</tr></thead>
-          <tbody>{[...carriers].sort((a,b)=>b.estCost-a.estCost).map(c=>{const sel=selCarrier===c.name;const cpC=Math.round(c.estCost/c.containers);const rc=cpC>500?T.red:cpC>200?T.amber:T.green;return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}><td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td><td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td><td style={{padding:"7px",textAlign:"right",fontWeight:700,color:T.red}}>{fmt(c.estCost)}</td><td style={{padding:"7px",textAlign:"right",color:cpC>500?T.red:cpC>200?T.amber:T.sub,fontWeight:600}}>{fmt(cpC)}</td><td style={{padding:"7px",color:T.sub}}>{c.pastFPCount}</td><td style={{padding:"7px",color:c.beyondFP>0?T.red:T.sub,fontWeight:600}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td><td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{fmt(c.estCost)}</SolidBadge></td></tr>;})}
-          </tbody>
-        </>)}
-      </table>
+      {(()=>{
+        const activeX={detention:"avgODet",demurrage:"avgODem",storage:"avgOSto",combined:"totalO"}[view];
+        const activeY={detention:"avgDDet",demurrage:"avgDDem",storage:"avgDSto",combined:"totalD"}[view];
+        const hStyle=(h,active)=>({padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",fontSize:9,
+          textAlign:["Vol","Beyond FP","Score"].includes(h)?"right":"left",
+          color:active?T.blue:T.dim,background:active?T.blue+"12":T.card2,
+          transition:"background .15s"});
+        const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","D.Dem","D.Det","D.Sto","Beyond FP","Score"];
+        const colKeys={   "O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","D.Dem":"avgDDem","D.Det":"avgDDet","D.Sto":"avgDSto"};
+        const activeHighlight={"detention":["O.Det","D.Det"],"demurrage":["O.Dem","D.Dem"],"storage":["O.Sto","D.Sto"],"combined":["O.Det","O.Dem","D.Dem","D.Det"]}[view]||[];
+        return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
+          <thead><tr>{cols.map(h=><th key={h} style={hStyle(h,activeHighlight.includes(h))}>{h}
+            {h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}
+            {h==="Beyond FP"&&<HoverTip text="Avg origin detention minus 5.1d free period. Positive = containers in paid tiers."/>}
+          </th>)}</tr></thead>
+          <tbody>{[...carriers].sort((a,b)=>b[activeX]-a[activeX]).map(c=>{
+            const sel=selCarrier===c.name;
+            const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;
+            const hiCol=(key)=>activeHighlight.includes(key)?{fontWeight:700,color:c[colKeys[key]]>cfg.fpX?T.red:T.green}:{color:T.sub};
+            return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}>
+              <td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td>
+              <td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td>
+              <td style={{padding:"7px",...hiCol("O.Det")}}>{c.avgODet.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("O.Dem")}}>{c.avgODem.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("O.Sto")}}>{c.avgOSto.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("D.Dem")}}>{c.avgDDem.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("D.Det")}}>{c.avgDDet.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("D.Sto")}}>{c.avgDSto.toFixed(1)}d</td>
+              <td style={{padding:"7px",textAlign:"right",color:c.beyondFP>0?T.red:T.green,fontWeight:600}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td>
+              <td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td>
+            </tr>;
+          })}</tbody>
+        </table>;
+      })()}
     </Card>
 
     {selCarrier&&<Card style={{marginTop:10}}>
