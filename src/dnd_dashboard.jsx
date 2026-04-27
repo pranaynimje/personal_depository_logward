@@ -81,11 +81,19 @@ function HomePage({setPage}){
     {/* HERO ROW: Main metric + Alert panel */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16,marginBottom:12}}>
       <Card style={{padding:"16px 20px"}}>
-        <div style={{display:"flex",alignItems:"baseline",gap:12}}><span style={{fontSize:28,fontWeight:700,color:T.text,letterSpacing:"-0.5px"}}>{fmt(BASE.grandTotal)}</span><span style={{fontSize:12,fontWeight:600,color:mom.color}}>{mom.arrow} {Math.abs(mom.v)}% MoM</span></div>
-        <div style={{fontSize:10,color:T.sub,marginTop:2}}>Total D&D Exposure</div>
-        <div style={{display:"flex",gap:16,marginTop:10}}>
-          {[{l:"Origin",v:fmt(BASE.totalOriginCost),s:originPct+"% of total",c:T.amber},{l:"Destination",v:fmt(BASE.totalDestCost),s:(100-originPct)+"% of total",c:T.purple},{l:"Storage",v:fmt(cm.storage_origin.total+cm.storage_destination.total),s:storagePct+"% of total",c:T.green}].map(k=><div key={k.l} style={{borderLeft:"3px solid "+k.c,paddingLeft:8}}><div style={{fontSize:14,fontWeight:600,color:T.text}}>{k.v}</div><div style={{fontSize:10,color:T.sub}}>{k.l} | {k.s}</div></div>)}
-          <div style={{borderLeft:"3px solid "+T.blue,paddingLeft:8}}><div style={{fontSize:14,fontWeight:600,color:T.text}}>{BASE.summary.inProgress.toLocaleString()}</div><div style={{fontSize:10,color:T.sub}}>Active | {BASE.summary.totalContainers.toLocaleString()} total</div></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div>
+            <div style={{display:"flex",alignItems:"baseline",gap:12}}><span style={{fontSize:28,fontWeight:700,color:T.text,letterSpacing:"-0.5px"}}>{fmt(BASE.grandTotal)}</span><span style={{fontSize:12,fontWeight:600,color:mom.color}}>{mom.arrow} {Math.abs(mom.v)}% MoM</span></div>
+            <div style={{fontSize:10,color:T.sub,marginTop:2}}>Total D&D Exposure</div>
+          </div>
+          <div style={{textAlign:"right",background:T.blueBg,borderRadius:10,padding:"8px 12px"}}>
+            <div style={{fontSize:18,fontWeight:700,color:T.blue}}>{BASE.summary.inProgress.toLocaleString()}</div>
+            <div style={{fontSize:9,color:T.sub}}>Active Containers</div>
+            <div style={{fontSize:9,color:T.dim}}>{BASE.summary.totalContainers.toLocaleString()} total</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:16,marginTop:12}}>
+          {[{l:"Origin",v:fmt(BASE.totalOriginCost),s:originPct+"% of total",c:T.amber},{l:"Destination",v:fmt(BASE.totalDestCost),s:(100-originPct)+"% of total",c:T.purple}].map(k=><div key={k.l} style={{borderLeft:"3px solid "+k.c,paddingLeft:8}}><div style={{fontSize:14,fontWeight:600,color:T.text}}>{k.v}</div><div style={{fontSize:10,color:T.sub}}>{k.l} | {k.s}</div></div>)}
         </div>
       </Card>
       <Card style={{padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"center",borderTop:"3px solid "+T.red,background:"#fff"}}>
@@ -131,11 +139,11 @@ function HomePage({setPage}){
         <div style={{background:sec.bg+"80",border:"none",borderRadius:14,padding:"16px 14px 12px",marginBottom:si===0?6:0,position:"relative"}}>
           <div style={{position:"absolute",top:7,left:12,fontSize:9,fontWeight:700,color:sec.lc,textTransform:"uppercase",letterSpacing:1}}>{sec.label}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginTop:14}}>
-            {sec.nodes.map((n,i)=><div key={i} style={{background:"#fff",border:"1px solid "+(n.incurred>100?T.red+"40":T.border+"80"),borderRadius:12,padding:"12px 10px",textAlign:"center",borderWidth:1,position:"relative"}}>
-              {n.missing>0&&<div title={n.missing+" containers missing this milestone — tracking data not received"} style={{position:"absolute",top:6,right:8,cursor:"help",fontSize:11,color:T.amber}}>{"⚠"}</div>}
+            {sec.nodes.map((n,i)=><div key={i} style={{background:"#fff",border:"1px solid "+T.border+"80",borderRadius:12,padding:"12px 10px",textAlign:"center",position:"relative"}}>
+              {n.missing>0&&<div style={{position:"absolute",top:6,right:8,cursor:"help",fontSize:11,color:T.amber,userSelect:"none"}} title={"⚠ "+n.missing.toLocaleString()+" containers are missing this milestone — tracking data not received for these shipments"}>{"⚠ "+n.missing.toLocaleString()}</div>}
               <n.icon size={14} color={n.color} style={{marginBottom:2}}/><div style={{fontSize:11,fontWeight:700}}>{n.label}</div><div style={{fontSize:10,color:T.dim}}>{n.sub}</div>
-              <div style={{fontSize:9,color:T.sub,marginTop:4}}>Cost Incurred</div>
-              <div style={{fontSize:16,fontWeight:700,margin:"2px 0",color:n.incurred>100?T.red:T.text}}>{fmt(n.incurred)}</div>
+              <div style={{fontSize:9,color:T.sub,marginTop:4}}>Affected Containers</div>
+              <div style={{fontSize:16,fontWeight:700,margin:"2px 0",color:T.text}}>{n.actual.toLocaleString()}</div>
             </div>)}
           </div>
         </div>
