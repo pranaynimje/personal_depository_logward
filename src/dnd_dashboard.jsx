@@ -308,8 +308,9 @@ function CarrierPage({setPage}){
     const tier1=Math.round(d.containers*Math.min(pastFPPct/100,0.3));
     const tier2=Math.round(d.containers*Math.max(0,Math.min(pastFPPct/100-0.3,0.25)));
     const tier3=Math.round(d.containers*Math.max(0,pastFPPct/100-0.55));
+    const beyondFPDest=+(d.avgDDet-6.0).toFixed(1);
     return{name:n,...d,avgOSto:d.avgOSto||0,avgDSto:d.avgDSto||0,
-      totalO:d.avgODet+d.avgODem,totalD:d.avgDDem+d.avgDDet,beyondFP,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,
+      totalO:d.avgODet+d.avgODem,totalD:d.avgDDem+d.avgDDet,beyondFP,beyondFPDest,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,
       risk:Math.min(100,Math.round((d.avgODet+d.avgODem)*8+(d.avgDDem+d.avgDDet)*5+d.missingMilestones/d.containers*2))};
   }).sort((a,b)=>b.totalO-a.totalO),[]);
 
@@ -427,15 +428,16 @@ if(view==="exceeding"){
       </div>
       {(()=>{
         const hStyle=(h)=>({padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",fontSize:9,
-          textAlign:["Vol","Beyond FP","Score"].includes(h)?"right":"left",
+          textAlign:["Vol","O.BFP","D.BFP","Score"].includes(h)?"right":"left",
           color:T.dim,background:T.card2});
-        const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","D.Dem","D.Det","D.Sto","Beyond FP","Score"];
+        const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","D.Dem","D.Det","D.Sto","O.BFP","D.BFP","Score"];
         const colKeys={"O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","D.Dem":"avgDDem","D.Det":"avgDDet","D.Sto":"avgDSto"};
         const fpMap={"O.Det":5.1,"O.Dem":3.1,"O.Sto":3.1,"D.Det":6.0,"D.Dem":3.0,"D.Sto":3.0};
         return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
           <thead><tr>{cols.map(h=><th key={h} style={hStyle(h)}>{h}
             {h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}
-            {h==="Beyond FP"&&<HoverTip text="Avg origin detention minus 5.1d free period. Positive = containers in paid tiers."/>}
+            {h==="O.BFP"&&<HoverTip text="Origin Beyond Free Period: avgODet − 5.1d. Positive = containers in paid origin detention tiers."/>}
+            {h==="D.BFP"&&<HoverTip text="Destination Beyond Free Period: avgDDet − 6.0d. Positive = containers in paid destination detention tiers."/>}
           </th>)}</tr></thead>
           <tbody>{[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>{
             const sel=selCarrier===c.name;
@@ -451,6 +453,7 @@ if(view==="exceeding"){
               <td style={{padding:"7px",...hiCol("D.Det")}}>{c.avgDDet.toFixed(1)}d</td>
               <td style={{padding:"7px",...hiCol("D.Sto")}}>{c.avgDSto.toFixed(1)}d</td>
               <td style={{padding:"7px",textAlign:"right",color:c.beyondFP>0?T.red:T.green,fontWeight:600}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td>
+              <td style={{padding:"7px",textAlign:"right",color:c.beyondFPDest>0?T.red:T.green,fontWeight:600}}>{c.beyondFPDest>0?"+":""}{c.beyondFPDest}d</td>
               <td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td>
             </tr>;
           })}</tbody>
