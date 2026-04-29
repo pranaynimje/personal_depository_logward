@@ -468,7 +468,7 @@ if(view==="exceeding"){
 
 // ═══ MODULE 4: COST OPTIMIZER ═══
 function OptimizerPage(){
-  const[predDate,setPredDate]=useState("2026-06-15");
+  const[predDate,setPredDate]=useState(()=>new Date().toISOString().slice(0,10));
   // Group A filters (all-in-one per side)
   const[aFpStatus,setAFpStatus]=useState("All");const[aCat,setACat]=useState("All");const[aRisk,setARisk]=useState("All");const[aCostBand,setACostBand]=useState("All");
   const[aPolF,setAPolF]=useState("All");const[aPodF,setAPodF]=useState("All");const[aCarF,setACarF]=useState("All");
@@ -481,7 +481,7 @@ function OptimizerPage(){
   const[aSortCol,setASortCol]=useState("todayCost");const[aSortDir,setASortDir]=useState("desc");
   const[bSortCol,setBSortCol]=useState("todayCost");const[bSortDir,setBSortDir]=useState("desc");
 
-  const predDays=useMemo(()=>Math.max(0,Math.round((new Date(predDate)-new Date("2026-04-29"))/86400000)),[predDate]);
+  const predDays=useMemo(()=>Math.max(0,Math.round((new Date(predDate)-new Date(new Date().toISOString().slice(0,10)))/86400000)),[predDate]);
   const predCost=useMemo(()=>[{n:"Detention",fp:5.1,c:T.amber},{n:"Demurrage",fp:3.1,c:T.purple},{n:"Storage",fp:3.1,c:T.green},{n:"Combined",fp:9.9,c:T.red}].map(cat=>{const bp=Math.max(0,predDays-cat.fp);let dr=0;if(bp>0){dr=bp<=3?50:bp<=7?100:200;}return{...cat,beyondFP:bp,dailyRate:dr,predicted:Math.round(bp*dr*Math.max(1,Math.round(predDays*2.5)))};}),[predDays]);
 
   const allContainers=useMemo(()=>CDATA.topRisk.map(c=>{
@@ -545,7 +545,7 @@ function OptimizerPage(){
     <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:T.card2,borderRadius:10,border:"1.5px solid "+T.blue+"50",marginBottom:14}}>
       <div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0}}>
         <div style={{fontSize:9,fontWeight:700,color:T.blue,textTransform:"uppercase",letterSpacing:"0.5px"}}>Forecast Date</div>
-        <input type="date" value={predDate} onChange={e=>setPredDate(e.target.value)} min="2026-04-30" max="2026-12-31" style={{border:"1.5px solid "+T.blue,borderRadius:7,padding:"7px 12px",fontSize:13,fontWeight:700,outline:"none",background:"#fff",color:T.text,colorScheme:"light"}}/>
+        <input type="date" value={predDate} onChange={e=>setPredDate(e.target.value)} min={new Date().toISOString().slice(0,10)} max="2026-12-31" style={{border:"1.5px solid "+T.blue,borderRadius:7,padding:"7px 12px",fontSize:13,fontWeight:700,outline:"none",background:"#fff",color:T.text,colorScheme:"light"}}/>
       </div>
       <div style={{width:1,height:44,background:T.border,flexShrink:0}}/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,flex:1}}>
