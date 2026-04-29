@@ -190,11 +190,13 @@ function HomePage({setPage}){
             </tbody>
           </table>
         )}
+        {breakdownToggle==="location"&&<div style={{fontSize:9,color:T.dim,marginTop:6,lineHeight:1.4}}>Combined D&D containers are billed under a single joint tariff. Detention and Demurrage rows reflect separately-billed contracts only — no double-counting.</div>}
         <Insight text={(()=>{const cats=[{n:"Combined D&D",v:cm.dnd_origin.total},{n:"Detention",v:cm.detention_origin.total},{n:"Demurrage",v:cm.demurrage_origin.total},{n:"Storage",v:cm.storage_origin.total}];const top=cats.reduce((a,b)=>b.v>a.v?b:a);return top.n+" at origin ("+fmt(top.v)+") accounts for "+Math.round(top.v/BASE.grandTotal*100)+"% of total exposure. This is your largest cost bucket.";})()}/>
       </Card>
       <Card id="freeTimeHealth">
         <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Free Time Health</div>
-        <div style={{fontSize:11,color:T.sub,marginBottom:10}}>Distribution of containers by free period status</div>
+        <div style={{fontSize:11,color:T.sub,marginBottom:4}}>Distribution of containers by free period status</div>
+        <div style={{fontSize:9,color:T.dim,marginBottom:10,lineHeight:1.4}}>Counts reflect risk events, not unique containers. One container may appear in multiple categories.</div>
         {[
           {label:"Overdue",desc:"Free period expired",count:fth.expired,color:T.red,action:"Review and clear"},
           {label:"At Risk",desc:"Expiring within 48 hours",count:fth.red,color:T.amber,action:"Expedite today"},
