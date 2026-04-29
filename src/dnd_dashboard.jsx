@@ -12,7 +12,7 @@ const BASE={
   freeTimeHealth:{red:35,yellow:24,green:205,expired:3780},
   costMatrix:{detention_origin:{total:49169,withCost:261,avgFP:5.1},detention_destination:{total:1955,withCost:8,avgFP:6.0},demurrage_origin:{total:22353,withCost:52,avgFP:3.1},demurrage_destination:{total:5144,withCost:12,avgFP:3.0},storage_origin:{total:3075,withCost:23,avgFP:3.1},storage_destination:{total:1295,withCost:9,avgFP:3.0},dnd_origin:{total:99565,withCost:212,avgFP:9.9},dnd_destination:{total:1814,withCost:4,avgFP:12.0},demurrageStorage_origin:{total:8420,withCost:31,avgFP:4.2},demurrageStorage_destination:{total:2190,withCost:7,avgFP:4.0},detentionDemurrage_origin:{total:34610,withCost:87,avgFP:7.8},detentionDemurrage_destination:{total:3280,withCost:11,avgFP:8.5},detentionDemurrageStorage_origin:{total:18740,withCost:44,avgFP:11.2},detentionDemurrageStorage_destination:{total:890,withCost:3,avgFP:13.0}},
   mom:{prevTotal:63450,currTotal:20955,prevOrigin:59620,currOrigin:19620,prevDest:3830,currDest:1335},
-  carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,avgOSto:2.8,avgDSto:1.9,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,avgOSto:1.2,avgDSto:1.4,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,avgOSto:2.1,avgDSto:1.6,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,avgOSto:2.6,avgDSto:2.1,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,avgOSto:1.9,avgDSto:1.5,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,avgOSto:0.8,avgDSto:0.9,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,avgOSto:0.5,avgDSto:1.2,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,avgOSto:2.2,avgDSto:1.7,missingMilestones:815}},
+  carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,avgOSto:2.8,avgDSto:1.9,avgOComb:10.4,avgDComb:7.8,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,avgOSto:1.2,avgDSto:1.4,avgOComb:3.6,avgDComb:6.5,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,avgOSto:2.1,avgDSto:1.6,avgOComb:6.2,avgDComb:7.1,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,avgOSto:2.6,avgDSto:2.1,avgOComb:10.8,avgDComb:8.4,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,avgOSto:1.9,avgDSto:1.5,avgOComb:5.9,avgDComb:6.8,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,avgOSto:0.8,avgDSto:0.9,avgOComb:2.8,avgDComb:5.6,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,avgOSto:0.5,avgDSto:1.2,avgOComb:2.1,avgDComb:7.4,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,avgOSto:2.2,avgDSto:1.7,avgOComb:6.8,avgDComb:7.6,missingMilestones:815}},
   topLanes:[
     {lane:"DEHAM-CNSHA",containers:34,avgODet:2.52,avgODem:0.94,avgDDem:3.12,avgDDet:5.46,freightPct:72,surchargePct:28},
     {lane:"DEHAM-CNYTN",containers:28,avgODet:7.85,avgODem:0.71,avgDDem:2.07,avgDDet:5.27,freightPct:65,surchargePct:35},
@@ -309,9 +309,21 @@ function CarrierPage({setPage}){
     const tier2=Math.round(d.containers*Math.max(0,Math.min(pastFPPct/100-0.3,0.25)));
     const tier3=Math.round(d.containers*Math.max(0,pastFPPct/100-0.55));
     const beyondFPDest=+(d.avgDDet-6.0).toFixed(1);
-    return{name:n,...d,avgOSto:d.avgOSto||0,avgDSto:d.avgDSto||0,
-      totalO:d.avgODet+d.avgODem,totalD:d.avgDDem+d.avgDDet,beyondFP,beyondFPDest,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,
-      risk:Math.min(100,Math.round((d.avgODet+d.avgODem)*8+(d.avgDDem+d.avgDDet)*5+d.missingMilestones/d.containers*2))};
+    const oSto=d.avgOSto||0;const dSto=d.avgDSto||0;
+    const oC=d.avgOComb||0;const dC=d.avgDComb||0;
+    const tO=d.avgODet+d.avgODem;const tD=d.avgDDem+d.avgDDet;
+    const risk=Math.min(100,Math.round(
+      Math.max(0,d.avgODet-5.1)*15+
+      Math.max(0,d.avgODem-3.1)*10+
+      Math.max(0,oSto-3.1)*6+
+      Math.max(0,oC-9.9)*10+
+      Math.max(0,d.avgDDet-6.0)*12+
+      Math.max(0,d.avgDDem-3.0)*8+
+      Math.max(0,dSto-3.0)*5+
+      Math.max(0,dC-12.0)*8
+    ));
+    return{name:n,...d,avgOSto:oSto,avgDSto:dSto,avgOComb:oC,avgDComb:dC,
+      totalO:tO,totalD:tD,beyondFP,beyondFPDest,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,risk};
   }).sort((a,b)=>b.totalO-a.totalO),[]);
 
   const selStyle={border:"1px solid "+T.border,borderRadius:8,padding:"6px 12px",fontSize:11,color:T.text,background:"#fff",cursor:"pointer",outline:"none",fontWeight:600};
@@ -429,15 +441,17 @@ if(view==="exceeding"){
       {(()=>{
         const hStyle=(h)=>({padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",fontSize:9,
           textAlign:["Vol","O.BFP","D.BFP","Score"].includes(h)?"right":"left",
-          color:T.dim,background:T.card2});
-        const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","D.Dem","D.Det","D.Sto","O.BFP","D.BFP","Score"];
-        const colKeys={"O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","D.Dem":"avgDDem","D.Det":"avgDDet","D.Sto":"avgDSto"};
-        const fpMap={"O.Det":5.1,"O.Dem":3.1,"O.Sto":3.1,"D.Det":6.0,"D.Dem":3.0,"D.Sto":3.0};
+          color:T.dim,background:T.card2,whiteSpace:"nowrap"});
+        const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","O.Comb","D.Det","D.Dem","D.Sto","D.Comb","O.BFP","D.BFP","Score"];
+        const colKeys={"O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","O.Comb":"avgOComb","D.Det":"avgDDet","D.Dem":"avgDDem","D.Sto":"avgDSto","D.Comb":"avgDComb"};
+        const fpMap={"O.Det":5.1,"O.Dem":3.1,"O.Sto":3.1,"O.Comb":9.9,"D.Det":6.0,"D.Dem":3.0,"D.Sto":3.0,"D.Comb":12.0};
         return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
           <thead><tr>{cols.map(h=><th key={h} style={hStyle(h)}>{h}
-            {h==="Score"&&<HoverTip text="min(100, (avgODet+avgODem)×8 + (avgDDem+avgDDet)×5 + missingMilestones/containers×2). Higher = worse."/>}
+            {h==="Score"&&<HoverTip text="Days beyond FP per category, weighted by cost impact. O.Det×15, O.Dem×10, O.Sto×6, O.Comb×10, D.Det×12, D.Dem×8, D.Sto×5, D.Comb×8. Capped at 100. Higher = worse."/>}
             {h==="O.BFP"&&<HoverTip text="Origin Beyond Free Period: avgODet − 5.1d. Positive = containers in paid origin detention tiers."/>}
             {h==="D.BFP"&&<HoverTip text="Destination Beyond Free Period: avgDDet − 6.0d. Positive = containers in paid destination detention tiers."/>}
+            {h==="O.Comb"&&<HoverTip text="Avg Combined D&D dwell at origin. FP = 9.9d. Red if exceeding combined free period."/>}
+            {h==="D.Comb"&&<HoverTip text="Avg Combined D&D dwell at destination. FP = 12.0d. Red if exceeding combined free period."/>}
           </th>)}</tr></thead>
           <tbody>{[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>{
             const sel=selCarrier===c.name;
@@ -449,9 +463,11 @@ if(view==="exceeding"){
               <td style={{padding:"7px",...hiCol("O.Det")}}>{c.avgODet.toFixed(1)}d</td>
               <td style={{padding:"7px",...hiCol("O.Dem")}}>{c.avgODem.toFixed(1)}d</td>
               <td style={{padding:"7px",...hiCol("O.Sto")}}>{c.avgOSto.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("D.Dem")}}>{c.avgDDem.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("O.Comb")}}>{c.avgOComb.toFixed(1)}d</td>
               <td style={{padding:"7px",...hiCol("D.Det")}}>{c.avgDDet.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("D.Dem")}}>{c.avgDDem.toFixed(1)}d</td>
               <td style={{padding:"7px",...hiCol("D.Sto")}}>{c.avgDSto.toFixed(1)}d</td>
+              <td style={{padding:"7px",...hiCol("D.Comb")}}>{c.avgDComb.toFixed(1)}d</td>
               <td style={{padding:"7px",textAlign:"right",color:c.beyondFP>0?T.red:T.green,fontWeight:600}}>{c.beyondFP>0?"+":""}{c.beyondFP}d</td>
               <td style={{padding:"7px",textAlign:"right",color:c.beyondFPDest>0?T.red:T.green,fontWeight:600}}>{c.beyondFPDest>0?"+":""}{c.beyondFPDest}d</td>
               <td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td>
