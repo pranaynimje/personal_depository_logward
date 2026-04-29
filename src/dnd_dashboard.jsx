@@ -146,7 +146,7 @@ function HomePage({setPage}){
           <div style={{position:"absolute",top:7,left:12,fontSize:9,fontWeight:700,color:sec.lc,textTransform:"uppercase",letterSpacing:1}}>{sec.label}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginTop:14}}>
             {sec.nodes.map((n,i)=><div key={i} style={{background:"#fff",border:"1px solid "+T.border+"80",borderRadius:12,padding:"12px 10px",textAlign:"center",position:"relative"}}>
-              {n.missing>0&&<div style={{position:"absolute",top:6,right:8,cursor:"help",fontSize:11,color:T.amber,userSelect:"none"}} title={"⚠ "+n.missing.toLocaleString()+" containers are missing this milestone — tracking data not received for these shipments"}>{"⚠ "+n.missing.toLocaleString()}</div>}
+              {n.missing>0&&(()=>{const TOTAL=2186;const reachRatio=n.actual/TOTAL;const isEarly=["Gate Out Empty","Gate In POL","Load POL"].includes(n.label);const isLate=["Gate Out POD","Empty Return"].includes(n.label);const tip=isLate?"Most containers have not yet reached this stage — expected for in-transit shipments.":(reachRatio>0.5?"⚠ "+n.missing.toLocaleString()+" containers reached this stage but date was not captured — possible tracking gap.":"Many containers have not yet reached this stage — check if upstream delays are holding shipments.");const badgeColor=isLate?T.sub:(reachRatio>0.5?T.amber:T.dim);return<div style={{position:"absolute",top:6,right:8,cursor:"help",fontSize:11,color:badgeColor,userSelect:"none"}} title={tip}>{(isLate?"○ ":"⚠ ")+n.missing.toLocaleString()}</div>;})()}
               <n.icon size={14} color={n.color} style={{marginBottom:2}}/><div style={{fontSize:11,fontWeight:700}}>{n.label}</div><div style={{fontSize:10,color:T.dim}}>{n.sub}</div>
               <div style={{fontSize:9,color:T.sub,marginTop:4}}>Affected Containers</div>
               <div style={{fontSize:16,fontWeight:700,margin:"2px 0",color:T.text}}>{n.actual.toLocaleString()}</div>
@@ -340,7 +340,13 @@ function CarrierPage({setPage}){
     if(view==="scatter"){
       const data=carriers.map(c=>({name:c.name,x:+c[cat.xKey].toFixed(2),y:+c[cat.yKey].toFixed(2),z:c.containers,risk:c.risk}));
       const xs=data.map(c=>c.x);const ys=data.map(c=>c.y);
-      const xMax=+(Math.max(...xs)*1.3+0.3).toFixed(1);const yMax=+(Math.max(...ys)*1.3+0.3).toFixed(1);
+      const allWithinFP=Math.max(...xs)<cat.fpX*0.2&&Math.max(...ys)<cat.fpY*0.2;
+      if(allWithinFP)return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:200,gap:6}}>
+        <div style={{fontSize:22}}>✓</div>
+        <div style={{fontSize:12,fontWeight:700,color:T.green}}>All carriers within free period</div>
+        <div style={{fontSize:10,color:T.sub}}>No action required for {cat.label}. Max observed: {Math.max(...xs).toFixed(1)}d origin, {Math.max(...ys).toFixed(1)}d dest (FP: {cat.fpX}d / {cat.fpY}d).</div>
+      </div>;
+      const xMax=+(Math.max(cat.fpX*1.5,Math.max(...xs)*1.3+0.3)).toFixed(1);const yMax=+(Math.max(cat.fpY*1.5,Math.max(...ys)*1.3+0.3)).toFixed(1);
       return <div style={{position:"relative",height:200}}>
         <div style={{position:"absolute",top:4,right:4,fontSize:8,fontWeight:700,color:T.red,opacity:.65,pointerEvents:"none",zIndex:5}}>Both Over ▲</div>
         <div style={{position:"absolute",top:4,left:48,fontSize:8,fontWeight:700,color:T.amber,opacity:.65,pointerEvents:"none",zIndex:5}}>▲ Dest</div>
@@ -485,7 +491,12 @@ if(view==="exceeding"){
     {selCarrier&&<Card style={{marginTop:10}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:13,fontWeight:700}}>{"Top Risk — "+selCarrier}</div><button onClick={()=>setSelCarrier(null)} style={{background:"none",border:"none",cursor:"pointer"}}><X size={14} color={T.dim}/></button></div>
       <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}><thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>{["Container","Route","Category","Cost","O.Det","Container Risk"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Cost","Container Risk"].includes(h)?"right":"left"}}>{h}{h==="Container Risk"&&<HoverTip text="Individual score based on dwell beyond free period + missing milestones."/>}</th>)}</tr></thead>
-      <tbody>{(()=>{const rows=CDATA.topRisk.filter(c=>c.ca===selCarrier);if(!rows.length)return<tr><td colSpan={6} style={{padding:"16px 8px",textAlign:"center",color:T.sub,fontSize:11}}>No high-risk containers currently flagged for this carrier in the priority list.</td></tr>;return rows.map((c,i)=><tr key={i} style={{background:T.card2}}><td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td><td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td><td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td><td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td><td style={{padding:"5px 6px",color:c.oDet>5?T.red:T.sub,fontWeight:600}}>{c.oDet}d</td><td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td></tr>)})()}</tbody></table>
+      <tbody>{(()=>{const rows=CDATA.topRisk.filter(c=>c.ca===selCarrier);if(!rows.length){const cd=BASE.carriers[selCarrier];const risk=cd?Math.min(100,Math.round(Math.max(0,cd.avgODet-5.1)*15+Math.max(0,cd.avgODem-3.1)*10+Math.max(0,cd.avgOSto-3.1)*6+Math.max(0,cd.avgOComb-9.9)*10+Math.max(0,cd.avgDDet-6.0)*12+Math.max(0,cd.avgDDem-3.0)*8+Math.max(0,cd.avgDSto-3.0)*5+Math.max(0,cd.avgDComb-12.0)*8)):0;return<tr><td colSpan={6}><div style={{padding:"12px 10px",background:T.greenBg,borderRadius:8,margin:"4px 0"}}>
+        <div style={{fontSize:11,fontWeight:700,color:T.green,marginBottom:6}}>{"✓ No priority containers — "+selCarrier+" is not in the current risk queue"}</div>
+        {cd&&<div style={{display:"flex",gap:16,flexWrap:"wrap"}}>{[{l:"Portfolio",v:cd.containers+" containers"},{l:"O.Det avg",v:cd.avgODet+"d"},{l:"O.Dem avg",v:cd.avgODem+"d"},{l:"O.Comb avg",v:cd.avgOComb+"d"},{l:"D.Det avg",v:cd.avgDDet+"d"},{l:"Risk Score",v:risk,c:risk<40?T.green:risk<70?T.amber:T.red}].map(s=><div key={s.l} style={{fontSize:9,color:T.sub}}>
+          <span style={{fontWeight:600,color:s.c||T.text}}>{s.v}</span><span style={{marginLeft:3}}>{s.l}</span>
+        </div>)}</div>}
+      </div></td></tr>;}return rows.map((c,i)=><tr key={i} style={{background:T.card2}}><td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td><td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td><td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td><td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td><td style={{padding:"5px 6px",color:c.oDet>5?T.red:T.sub,fontWeight:600}}>{c.oDet}d</td><td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td></tr>)})()}</tbody></table>
     </Card>}
   </div>);
 }
