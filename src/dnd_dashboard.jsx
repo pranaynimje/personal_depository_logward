@@ -11,7 +11,7 @@ const BASE={
   missingMilestones:{gateOutEmpty:816,gateInPOL:787,loadPOL:910,dischargePOD:1751,gateOutPOD:1895,emptyReturn:2186},
   freeTimeHealth:{red:35,yellow:24,green:205,expired:3780},
   costMatrix:{detention_origin:{total:49169,withCost:261,avgFP:5.1},detention_destination:{total:1955,withCost:8,avgFP:6.0},demurrage_origin:{total:22353,withCost:52,avgFP:3.1},demurrage_destination:{total:5144,withCost:12,avgFP:3.0},storage_origin:{total:3075,withCost:23,avgFP:3.1},storage_destination:{total:1295,withCost:9,avgFP:3.0},dnd_origin:{total:99565,withCost:212,avgFP:9.9},dnd_destination:{total:1814,withCost:4,avgFP:12.0},demurrageStorage_origin:{total:8420,withCost:31,avgFP:4.2},demurrageStorage_destination:{total:2190,withCost:7,avgFP:4.0},detentionDemurrage_origin:{total:34610,withCost:87,avgFP:7.8},detentionDemurrage_destination:{total:3280,withCost:11,avgFP:8.5},detentionDemurrageStorage_origin:{total:18740,withCost:44,avgFP:11.2},detentionDemurrageStorage_destination:{total:890,withCost:3,avgFP:13.0}},
-  mom:{prevTotal:63450,currTotal:20955,prevOrigin:59620,currOrigin:19620,prevDest:3830,currDest:1335},
+
   carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,avgOSto:2.8,avgDSto:1.9,avgOComb:10.4,avgDComb:7.8,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,avgOSto:1.2,avgDSto:1.4,avgOComb:3.6,avgDComb:6.5,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,avgOSto:2.1,avgDSto:1.6,avgOComb:6.2,avgDComb:7.1,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,avgOSto:2.6,avgDSto:2.1,avgOComb:10.8,avgDComb:8.4,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,avgOSto:1.9,avgDSto:1.5,avgOComb:5.9,avgDComb:6.8,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,avgOSto:0.8,avgDSto:0.9,avgOComb:2.8,avgDComb:5.6,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,avgOSto:0.5,avgDSto:1.2,avgOComb:2.1,avgDComb:7.4,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,avgOSto:2.2,avgDSto:1.7,avgOComb:6.8,avgDComb:7.6,missingMilestones:815}},
   topLanes:[
     {lane:"DEHAM-CNSHA",containers:34,avgODet:2.52,avgODem:0.94,avgOSto:1.2,avgOComb:3.8,avgDDem:3.12,avgDDet:5.46,avgDSto:0.9,avgDComb:7.2,freightPct:72,surchargePct:28},
@@ -71,7 +71,8 @@ function TopNav({page,setPage}){return <div style={{background:"#fff",borderBott
 // ═══ MODULE 1: COMMAND CENTER ═══
 function HomePage({setPage}){
   const cm=BASE.costMatrix;const fth=BASE.freeTimeHealth;const sd=BASE.stageDays;const st=BASE.stages;
-  const mom=momPct(BASE.mom.currTotal,BASE.mom.prevTotal);
+  const _mc=BASE.monthlyCost;const _prev=_mc[_mc.length-2];const _curr=_mc[_mc.length-1];
+  const mom=momPct(_curr.total,_prev.total);
   const storagePct=Math.round((cm.storage_origin.total+cm.storage_destination.total)/BASE.grandTotal*100);
   const[breakdownToggle,setBreakdownToggle]=useState("category");
   const originPct=Math.round(BASE.totalOriginCost/BASE.grandTotal*100);
@@ -245,7 +246,9 @@ function HomePage({setPage}){
 
 // ═══ MODULE 2: COST OVERVIEW ═══
 function CostPage({setPage}){
-  const cm=BASE.costMatrix;const momO=momPct(BASE.mom.currOrigin,BASE.mom.prevOrigin);const momD=momPct(BASE.mom.currDest,BASE.mom.prevDest);
+  const cm=BASE.costMatrix;const _mc2=BASE.monthlyCost;const _p2=_mc2[_mc2.length-2];const _c2=_mc2[_mc2.length-1];
+  const momO=momPct(_c2.oDetention+_c2.oDemurrage+_c2.oStorage+_c2.oCombined,_p2.oDetention+_p2.oDemurrage+_p2.oStorage+_p2.oCombined);
+  const momD=momPct(_c2.dDetention+_c2.dDemurrage+_c2.dStorage+_c2.dCombined,_p2.dDetention+_p2.dDemurrage+_p2.dStorage+_p2.dCombined);
   const barData=COST_CATS.map(c=>({name:c.name,Origin:cm[c.oKey].total,Dest:cm[c.dKey].total}));
   const pieData=COST_CATS.map(c=>({name:c.name,value:cm[c.oKey].total+cm[c.dKey].total,color:c.color})).filter(d=>d.value>0);
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
