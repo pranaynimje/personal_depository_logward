@@ -11,7 +11,7 @@ const BASE={
   missingMilestones:{gateOutEmpty:816,gateInPOL:787,loadPOL:910,dischargePOD:1751,gateOutPOD:1895,emptyReturn:2186},
   freeTimeHealth:{red:35,yellow:24,green:205,expired:3780},
   costMatrix:{detention_origin:{total:49169,withCost:261,avgFP:5.1},detention_destination:{total:1955,withCost:8,avgFP:6.0},demurrage_origin:{total:22353,withCost:52,avgFP:3.1},demurrage_destination:{total:5144,withCost:12,avgFP:3.0},storage_origin:{total:3075,withCost:23,avgFP:3.1},storage_destination:{total:1295,withCost:9,avgFP:3.0},dnd_origin:{total:99565,withCost:212,avgFP:9.9},dnd_destination:{total:1814,withCost:4,avgFP:12.0},demurrageStorage_origin:{total:8420,withCost:31,avgFP:4.2},demurrageStorage_destination:{total:2190,withCost:7,avgFP:4.0},detentionDemurrage_origin:{total:34610,withCost:87,avgFP:7.8},detentionDemurrage_destination:{total:3280,withCost:11,avgFP:8.5},detentionDemurrageStorage_origin:{total:18740,withCost:44,avgFP:11.2},detentionDemurrageStorage_destination:{total:890,withCost:3,avgFP:13.0}},
-  mom:{prevTotal:168420,currTotal:184370,prevOrigin:159800,currOrigin:174162,prevDest:8620,currDest:10208},
+  mom:{prevTotal:63450,currTotal:20955,prevOrigin:59620,currOrigin:19620,prevDest:3830,currDest:1335},
   carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,avgOSto:2.8,avgDSto:1.9,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,avgOSto:1.2,avgDSto:1.4,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,avgOSto:2.1,avgDSto:1.6,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,avgOSto:2.6,avgDSto:2.1,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,avgOSto:1.9,avgDSto:1.5,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,avgOSto:0.8,avgDSto:0.9,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,avgOSto:0.5,avgDSto:1.2,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,avgOSto:2.2,avgDSto:1.7,missingMilestones:815}},
   topLanes:[
     {lane:"DEHAM-CNSHA",containers:34,avgODet:2.52,avgODem:0.94,avgDDem:3.12,avgDDet:5.46,freightPct:72,surchargePct:28},
@@ -25,11 +25,11 @@ const BASE={
     {lane:"DEHAM-THLCH",containers:19,avgODet:7.9,avgODem:1.52,avgDDem:4.09,avgDDet:6.87,freightPct:56,surchargePct:44},
     {lane:"DEHAM-JPNGO",containers:18,avgODet:8.95,avgODem:0.81,avgDDem:2.37,avgDDet:4.58,freightPct:70,surchargePct:30}],
   monthlyCost:[
-    {month:"Apr 25",detention:5665,demurrage:0,storage:1300,combined:4820,total:11785,oDetention:5200,oDemurrage:0,oStorage:1100,oCombined:4400,dDetention:465,dDemurrage:0,dStorage:200,dCombined:420,containers:150},
-    {month:"May 25",detention:27128,demurrage:13115,storage:2235,combined:57146,total:99624,oDetention:25800,oDemurrage:12400,oStorage:1900,oCombined:54200,dDetention:1328,dDemurrage:715,dStorage:335,dCombined:2946,containers:890},
-    {month:"Jun 25",detention:18331,demurrage:13365,storage:2135,combined:38479,total:72310,oDetention:17100,oDemurrage:12600,oStorage:1800,oCombined:36200,dDetention:1231,dDemurrage:765,dStorage:335,dCombined:2279,containers:620},
-    {month:"Jul 25",detention:0,demurrage:1017,storage:0,combined:934,total:1951,oDetention:0,oDemurrage:800,oStorage:0,oCombined:700,dDetention:0,dDemurrage:217,dStorage:0,dCombined:234,containers:45}],
-  grandTotal:184370,totalOriginCost:174162,totalDestCost:10208,
+    {month:"Jan 26",detention:8420,demurrage:4310,storage:1850,combined:18640,total:33220,oDetention:7900,oDemurrage:4100,oStorage:1600,oCombined:17200,dDetention:520,dDemurrage:210,dStorage:250,dCombined:1440,containers:410},
+    {month:"Feb 26",detention:19840,demurrage:11250,storage:2480,combined:42180,total:75750,oDetention:18600,oDemurrage:10600,oStorage:2100,oCombined:39800,dDetention:1240,dDemurrage:650,dStorage:380,dCombined:2380,containers:720},
+    {month:"Mar 26",detention:15960,demurrage:9870,storage:2140,combined:35480,total:63450,oDetention:14900,oDemurrage:9300,oStorage:1820,oCombined:33500,dDetention:1060,dDemurrage:570,dStorage:320,dCombined:1980,containers:598},
+    {month:"Apr 26",detention:5165,demurrage:2840,storage:1220,combined:11730,total:20955,oDetention:4860,oDemurrage:2680,oStorage:1040,oCombined:11040,dDetention:305,dDemurrage:160,dStorage:180,dCombined:690,containers:248}],
+  grandTotal:193375,totalOriginCost:181040,totalDestCost:12335,
 };
 const CDATA={topRisk:[
   {cn:"HLCU_021020",ca:"HLCU",po:"DEWVN",pd:"CNTAO",oDet:11.1,risk:80,cat:"Detention",cost:726,cost3d:1476,cost7d:2976,stage:"Gate In POL"},
@@ -468,7 +468,7 @@ if(view==="exceeding"){
 
 // ═══ MODULE 4: COST OPTIMIZER ═══
 function OptimizerPage(){
-  const[predDate,setPredDate]=useState("2025-11-15");
+  const[predDate,setPredDate]=useState("2026-06-15");
   // Group A filters (all-in-one per side)
   const[aFpStatus,setAFpStatus]=useState("All");const[aCat,setACat]=useState("All");const[aRisk,setARisk]=useState("All");const[aCostBand,setACostBand]=useState("All");
   const[aPolF,setAPolF]=useState("All");const[aPodF,setAPodF]=useState("All");const[aCarF,setACarF]=useState("All");
@@ -481,7 +481,7 @@ function OptimizerPage(){
   const[aSortCol,setASortCol]=useState("todayCost");const[aSortDir,setASortDir]=useState("desc");
   const[bSortCol,setBSortCol]=useState("todayCost");const[bSortDir,setBSortDir]=useState("desc");
 
-  const predDays=useMemo(()=>Math.max(0,Math.round((new Date(predDate)-new Date("2025-10-01"))/86400000)),[predDate]);
+  const predDays=useMemo(()=>Math.max(0,Math.round((new Date(predDate)-new Date("2026-04-29"))/86400000)),[predDate]);
   const predCost=useMemo(()=>[{n:"Detention",fp:5.1,c:T.amber},{n:"Demurrage",fp:3.1,c:T.purple},{n:"Storage",fp:3.1,c:T.green},{n:"Combined",fp:9.9,c:T.red}].map(cat=>{const bp=Math.max(0,predDays-cat.fp);let dr=0;if(bp>0){dr=bp<=3?50:bp<=7?100:200;}return{...cat,beyondFP:bp,dailyRate:dr,predicted:Math.round(bp*dr*Math.max(1,Math.round(predDays*2.5)))};}),[predDays]);
 
   const allContainers=useMemo(()=>CDATA.topRisk.map(c=>{
@@ -545,7 +545,7 @@ function OptimizerPage(){
     <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:T.card2,borderRadius:10,border:"1.5px solid "+T.blue+"50",marginBottom:14}}>
       <div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0}}>
         <div style={{fontSize:9,fontWeight:700,color:T.blue,textTransform:"uppercase",letterSpacing:"0.5px"}}>Forecast Date</div>
-        <input type="date" value={predDate} onChange={e=>setPredDate(e.target.value)} min="2025-10-02" max="2026-06-30" style={{border:"1.5px solid "+T.blue,borderRadius:7,padding:"7px 12px",fontSize:13,fontWeight:700,outline:"none",background:"#fff",color:T.text,colorScheme:"light"}}/>
+        <input type="date" value={predDate} onChange={e=>setPredDate(e.target.value)} min="2026-04-30" max="2026-12-31" style={{border:"1.5px solid "+T.blue,borderRadius:7,padding:"7px 12px",fontSize:13,fontWeight:700,outline:"none",background:"#fff",color:T.text,colorScheme:"light"}}/>
       </div>
       <div style={{width:1,height:44,background:T.border,flexShrink:0}}/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,flex:1}}>
@@ -558,7 +558,7 @@ function OptimizerPage(){
     <Card style={{marginBottom:14,borderLeft:"3px solid "+T.blue}}>
       <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Cost Forecast</div>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-        <thead><tr style={{background:T.card2}}><th style={{padding:"6px 10px",textAlign:"left",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"6px 0 0 6px"}}>Category</th><th style={{padding:"6px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Free Period</th><th style={{padding:"6px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Beyond FP</th><th style={{padding:"6px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Daily Rate</th><th style={{padding:"6px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"0 6px 6px 0"}}>Predicted Cost</th></tr></thead>
+        <thead><tr style={{background:T.card2}}><th style={{padding:"8px 10px",textAlign:"left",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"6px 0 0 6px"}}>Category</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Free Period</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Beyond FP</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Daily Rate</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"0 6px 6px 0"}}>Predicted Cost</th></tr></thead>
         <tbody>{predCost.map((c,i)=><tr key={c.n} style={{background:i%2===0?"#fff":T.card2+"80",borderBottom:"1px solid "+T.border+"40"}}>
           <td style={{padding:"8px 10px"}}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:8,height:8,borderRadius:2,background:c.c,flexShrink:0}}/><span style={{fontWeight:600}}>{c.n}</span></div></td>
           <td style={{padding:"8px 10px",textAlign:"right",color:T.sub}}>{c.fp}d</td>
@@ -635,7 +635,7 @@ function OptimizerPage(){
         const sortedA=sortFn(groupA.active,aSortCol,aSortDir);const sortedB=sortFn(groupB.active,bSortCol,bSortDir);
         const mkOnSort=(setCol,setDir,col,curCol,curDir)=>()=>{if(col===curCol)setDir(d=>d==="desc"?"asc":"desc");else{setCol(col);setDir("desc");}};
         const SortTh=({col,label,sCol,sDir,onSort})=>{const active=sCol===col;return <th onClick={()=>onSort(col)} style={{padding:"6px 8px",textAlign:"right",color:active?T.blue:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap"}}>{label}{active?sDir==="desc"?" ↓":" ↑":" ↕"}</th>;};
-        const thStyle=(right,active,color)=>({padding:"7px 6px",textAlign:right?"right":"left",color:active?color:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap",background:"inherit"});
+        const thStyle=(right,active,color)=>({padding:"5px 6px",textAlign:right?"right":"left",color:active?color:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",cursor:"pointer",userSelect:"none",whiteSpace:"nowrap",background:"inherit"});
         const ContainerRow=({c,dimmed})=><tr style={{background:"#fff",opacity:dimmed?.35:1,borderBottom:"1px solid "+T.border+"30"}}>
           <td style={{padding:"5px 6px",fontFamily:"monospace",fontSize:9,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:80}}>{c.cn}</td>
           <td style={{padding:"5px 6px",fontSize:9,color:T.sub}}>{c.ca}</td>
@@ -726,7 +726,7 @@ function HistoryPage({setPage,navToSurcharges}){
     <Card style={{marginTop:14}}>
       <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Stage-Wise Cost Contribution</div><div style={{fontSize:11,color:T.sub,marginBottom:10}}>Which journey stages drive cost? Focus on "Over" rows.</div>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
-        <thead><tr style={{background:T.card2}}>{["Stage","Type","Avg Dwell","Free Period","Breach","Cost","%","Status"].map((h,hi)=><th key={h} style={{padding:"7px 10px",textAlign:["Cost","%"].includes(h)?"right":"left",color:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",borderRadius:hi===0?"5px 0 0 5px":hi===7?"0 5px 5px 0":"0"}}>{h}{h==="Status"&&<HoverTip text={"Over: breach > 1d beyond free. Near: 0–1d. OK: within free period."}/>}{h==="Breach"&&<HoverTip text={"Avg dwell minus free period. Positive = days in paid tier."}/>}</th>)}</tr></thead>
+        <thead><tr style={{background:T.card2}}>{["Stage","Type","Avg Dwell","Free Period","Breach","Cost","%","Status"].map((h,hi)=><th key={h} style={{padding:"8px 10px",textAlign:["Cost","%"].includes(h)?"right":"left",color:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",borderRadius:hi===0?"5px 0 0 5px":hi===7?"0 5px 5px 0":"0"}}>{h}{h==="Status"&&<HoverTip text={"Over: breach > 1d beyond free. Near: 0–1d. OK: within free period."}/>}{h==="Breach"&&<HoverTip text={"Avg dwell minus free period. Positive = days in paid tier."}/>}</th>)}</tr></thead>
         <tbody>{stageData.map((s,i)=>{const pct=Math.round(s.cost/totalStageCost*100);const v=s.breach>1?{t:"Over",c:T.red}:s.breach>0?{t:"Near",c:T.amber}:{t:"OK",c:T.green};return <tr key={i} style={{background:i%2===0?"#fff":T.card2+"60",borderBottom:"1px solid "+T.border+"30"}}><td style={{padding:"8px 10px",fontWeight:600}}>{s.stage}</td><td style={{padding:"8px 10px"}}><Badge color={s.color}>{s.costType}</Badge></td><td style={{padding:"8px 10px",fontWeight:600}}>{s.avgDays.toFixed(1)}d</td><td style={{padding:"8px 10px",color:T.green,fontWeight:600}}>{s.freeTime}d</td><td style={{padding:"8px 10px",color:s.breach>0?T.red:T.green,fontWeight:700}}>{s.breach.toFixed(1)}d</td><td style={{padding:"8px 10px",color:s.color,fontWeight:600,textAlign:"right"}}>{fmt(s.cost)}</td><td style={{padding:"8px 10px",textAlign:"right"}}>{pct}%</td><td style={{padding:"8px 10px"}}><SolidBadge color={v.c}>{v.t}</SolidBadge></td></tr>;})}</tbody>
       </table>
     </Card>
