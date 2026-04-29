@@ -489,16 +489,28 @@ if(view==="exceeding"){
       })()}
     </Card>
 
-    {selCarrier&&<Card style={{marginTop:10}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:13,fontWeight:700}}>{"Top Risk — "+selCarrier}</div><button onClick={()=>setSelCarrier(null)} style={{background:"none",border:"none",cursor:"pointer"}}><X size={14} color={T.dim}/></button></div>
-      <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}><thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>{["Container","Route","Category","Cost","O.Det","Container Risk"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Cost","Container Risk"].includes(h)?"right":"left"}}>{h}{h==="Container Risk"&&<HoverTip text="Individual score based on dwell beyond free period + missing milestones."/>}</th>)}</tr></thead>
-      <tbody>{(()=>{const rows=CDATA.topRisk.filter(c=>c.ca===selCarrier);if(!rows.length){const cd=BASE.carriers[selCarrier];const risk=cd?Math.min(100,Math.round(Math.max(0,cd.avgODet-5.1)*15+Math.max(0,cd.avgODem-3.1)*10+Math.max(0,cd.avgOSto-3.1)*6+Math.max(0,cd.avgOComb-9.9)*10+Math.max(0,cd.avgDDet-6.0)*12+Math.max(0,cd.avgDDem-3.0)*8+Math.max(0,cd.avgDSto-3.0)*5+Math.max(0,cd.avgDComb-12.0)*8)):0;return<tr><td colSpan={6}><div style={{padding:"12px 10px",background:T.greenBg,borderRadius:8,margin:"4px 0"}}>
-        <div style={{fontSize:11,fontWeight:700,color:T.green,marginBottom:6}}>{"✓ No priority containers — "+selCarrier+" is not in the current risk queue"}</div>
-        {cd&&<div style={{display:"flex",gap:16,flexWrap:"wrap"}}>{[{l:"Portfolio",v:cd.containers+" containers"},{l:"O.Det avg",v:cd.avgODet+"d"},{l:"O.Dem avg",v:cd.avgODem+"d"},{l:"O.Comb avg",v:cd.avgOComb+"d"},{l:"D.Det avg",v:cd.avgDDet+"d"},{l:"Risk Score",v:risk,c:risk<40?T.green:risk<70?T.amber:T.red}].map(s=><div key={s.l} style={{fontSize:9,color:T.sub}}>
-          <span style={{fontWeight:600,color:s.c||T.text}}>{s.v}</span><span style={{marginLeft:3}}>{s.l}</span>
-        </div>)}</div>}
-      </div></td></tr>;}return rows.map((c,i)=><tr key={i} style={{background:T.card2}}><td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td><td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td><td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td><td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td><td style={{padding:"5px 6px",color:c.oDet>5?T.red:T.sub,fontWeight:600}}>{c.oDet}d</td><td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td></tr>)})()}</tbody></table>
-    </Card>}
+    {selCarrier&&(()=>{const rows=CDATA.topRisk.filter(c=>c.ca===selCarrier);const cd=BASE.carriers[selCarrier];const risk=cd?Math.min(100,Math.round(Math.max(0,cd.avgODet-5.1)*15+Math.max(0,cd.avgODem-3.1)*10+Math.max(0,cd.avgOSto-3.1)*6+Math.max(0,cd.avgOComb-9.9)*10+Math.max(0,cd.avgDDet-6.0)*12+Math.max(0,cd.avgDDem-3.0)*8+Math.max(0,cd.avgDSto-3.0)*5+Math.max(0,cd.avgDComb-12.0)*8)):0;
+      return <Card style={{marginTop:10}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:13,fontWeight:700}}>{rows.length?"Top Risk — "+selCarrier:selCarrier+" — Carrier Summary"}</div><button onClick={()=>setSelCarrier(null)} style={{background:"none",border:"none",cursor:"pointer"}}><X size={14} color={T.dim}/></button></div>
+        {!rows.length?(
+          <div>
+            <div style={{background:T.greenBg,border:"1px solid "+T.green+"40",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+              <div style={{fontSize:12,fontWeight:700,color:T.green,marginBottom:4}}>{"✓ No containers from "+selCarrier+" in the current priority queue"}</div>
+              <div style={{fontSize:10,color:T.sub}}>{"None of this carrier's "+( cd?.containers||"—")+" portfolio containers breach the top-risk threshold."}</div>
+            </div>
+            {cd&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {[{l:"Portfolio",v:cd.containers+" containers",c:T.text},{l:"O.Det avg",v:cd.avgODet+"d",c:cd.avgODet>5.1?T.red:T.green},{l:"O.Dem avg",v:cd.avgODem+"d",c:cd.avgODem>3.1?T.red:T.green},{l:"O.Comb avg",v:cd.avgOComb+"d",c:cd.avgOComb>9.9?T.red:T.green},{l:"D.Det avg",v:cd.avgDDet+"d",c:cd.avgDDet>6.0?T.red:T.green},{l:"D.Dem avg",v:cd.avgDDem+"d",c:cd.avgDDem>3.0?T.red:T.green},{l:"D.Comb avg",v:cd.avgDComb+"d",c:cd.avgDComb>12.0?T.red:T.green},{l:"Risk Score",v:risk,c:risk<40?T.green:risk<70?T.amber:T.red}].map(s=><div key={s.l} style={{background:T.card2,borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
+                <div style={{fontSize:14,fontWeight:700,color:s.c}}>{s.v}</div>
+                <div style={{fontSize:9,color:T.sub,marginTop:2}}>{s.l}</div>
+              </div>)}
+            </div>}
+          </div>
+        ):(
+          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}><thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>{["Container","Route","Category","Cost","O.Det","Container Risk"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Cost","Container Risk"].includes(h)?"right":"left"}}>{h}{h==="Container Risk"&&<HoverTip text="Individual score based on dwell beyond free period + missing milestones."/>}</th>)}</tr></thead>
+          <tbody>{rows.map((c,i)=><tr key={i} style={{background:T.card2}}><td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td><td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td><td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td><td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td><td style={{padding:"5px 6px",color:c.oDet>5?T.red:T.sub,fontWeight:600}}>{c.oDet}d</td><td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td></tr>)}</tbody></table>
+        )}
+      </Card>;
+    })()}
   </div>);
 }
 
