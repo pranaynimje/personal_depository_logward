@@ -482,7 +482,9 @@ function OptimizerPage(){
   const[bSortCol,setBSortCol]=useState("todayCost");const[bSortDir,setBSortDir]=useState("desc");
 
   const predDays=useMemo(()=>Math.max(0,Math.round((new Date(predDate)-new Date(new Date().toISOString().slice(0,10)))/86400000)),[predDate]);
-  const predCost=useMemo(()=>[{n:"Detention",fp:5.1,c:T.amber},{n:"Demurrage",fp:3.1,c:T.purple},{n:"Storage",fp:3.1,c:T.green},{n:"Combined",fp:9.9,c:T.red}].map(cat=>{const bp=Math.max(0,predDays-cat.fp);let dr=0;if(bp>0){dr=bp<=3?50:bp<=7?100:200;}return{...cat,beyondFP:bp,dailyRate:dr,predicted:Math.round(bp*dr*Math.max(1,Math.round(predDays*2.5)))};}),[predDays]);
+  // Daily burn rates per category derived from portfolio totals ÷ avg FP breach days
+  const CAT_DAILY={Detention:Math.round((BASE.costMatrix.detention_origin.total+BASE.costMatrix.detention_destination.total)/(BASE.costMatrix.detention_origin.withCost*3.2||1)),Demurrage:Math.round((BASE.costMatrix.demurrage_origin.total+BASE.costMatrix.demurrage_destination.total)/(BASE.costMatrix.demurrage_origin.withCost*2.1||1)),Storage:Math.round((BASE.costMatrix.storage_origin.total+BASE.costMatrix.storage_destination.total)/(BASE.costMatrix.storage_origin.withCost*1.8||1)),Combined:Math.round((BASE.costMatrix.dnd_origin.total+BASE.costMatrix.dnd_destination.total)/(BASE.costMatrix.dnd_origin.withCost*4.1||1))};
+  const predCost=useMemo(()=>[{n:"Detention",fp:5.1,c:T.amber,dk:"Detention"},{n:"Demurrage",fp:3.1,c:T.purple,dk:"Demurrage"},{n:"Storage",fp:3.1,c:T.green,dk:"Storage"},{n:"Combined",fp:9.9,c:T.red,dk:"Combined"}].map(cat=>{const bp=Math.max(0,predDays-cat.fp);const dr=CAT_DAILY[cat.dk]||100;const affected=predDays===0?0:Math.round(bp*2.8);const predicted=Math.round(bp*dr*Math.max(1,affected));return{...cat,beyondFP:bp,dailyRate:dr,predicted};}),[predDays]);
 
   const allContainers=useMemo(()=>CDATA.topRisk.map(c=>{
     const d3=c.cost3d-c.cost;const d7=c.cost7d-c.cost;const fp=5.1;const daily=Math.round(d3/3);
@@ -526,7 +528,8 @@ function OptimizerPage(){
   const selStyle={border:"1px solid "+T.border+"80",borderRadius:8,padding:"4px 8px",fontSize:10,color:T.text,background:"#fff",cursor:"pointer",outline:"none",minWidth:70};
   const resetAll=()=>{setAFpStatus("All");setACat("All");setARisk("All");setACostBand("All");setAPolF("All");setAPodF("All");setACarF("All");setATopN("All");setBFpStatus("All");setBCat("All");setBRisk("All");setBCostBand("All");setBPolF("All");setBPodF("All");setBCarF("All");setBTopN("All");};
 
-  const chargeData=[{side:"Origin",Detention:BASE.costMatrix.detention_origin.total,Demurrage:BASE.costMatrix.demurrage_origin.total,Storage:BASE.costMatrix.storage_origin.total,"Combined D&D":BASE.costMatrix.dnd_origin.total},{side:"Dest",Detention:BASE.costMatrix.detention_destination.total,Demurrage:BASE.costMatrix.demurrage_destination.total,Storage:BASE.costMatrix.storage_destination.total,"Combined D&D":BASE.costMatrix.dnd_destination.total}];
+  // Charge breakdown scales with forecast date — each day adds proportional accrual to base portfolio
+  const chargeData=useMemo(()=>{const g=predDays===0?1:1+predDays*0.018;return[{side:"Origin",Detention:Math.round(BASE.costMatrix.detention_origin.total*g),Demurrage:Math.round(BASE.costMatrix.demurrage_origin.total*g),Storage:Math.round(BASE.costMatrix.storage_origin.total*g),"Combined D&D":Math.round(BASE.costMatrix.dnd_origin.total*g)},{side:"Dest",Detention:Math.round(BASE.costMatrix.detention_destination.total*g),Demurrage:Math.round(BASE.costMatrix.demurrage_destination.total*g),Storage:Math.round(BASE.costMatrix.storage_destination.total*g),"Combined D&D":Math.round(BASE.costMatrix.dnd_destination.total*g)}];},[predDays]);
 
   const ContainerCard=({c,dimmed})=><div style={{display:"flex",justifyContent:"space-between",padding:"5px 8px",borderRadius:6,marginBottom:2,background:"#fff",opacity:dimmed?.3:1,borderLeft:"3px solid "+catColor(c.cat)}}>
     <div><div style={{fontSize:10,fontWeight:600}}>{c.cn}</div><div style={{fontSize:9,color:T.sub}}>{c.ca+" | "+c.po+"→"+c.pd+" | "+c.fpStatus}</div></div>
@@ -550,8 +553,8 @@ function OptimizerPage(){
       <div style={{width:1,height:44,background:T.border,flexShrink:0}}/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,flex:1}}>
         <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.blue}}><div style={{fontSize:9,color:T.sub}}>Days from Reference</div><div style={{fontSize:22,fontWeight:700,color:T.blue}}>{predDays}</div></div>
-        <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.text}}><div style={{fontSize:9,color:T.sub}}>Containers Affected</div><div style={{fontSize:22,fontWeight:700,color:T.text}}>{Math.max(1,Math.round(predDays*2.5))}</div></div>
-        <div style={{background:T.redBg,borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.red}}><div style={{fontSize:9,color:T.red}}>If No Action</div><div style={{fontSize:22,fontWeight:700,color:T.red}}>{fmt(predCost.reduce((s,c)=>s+c.predicted,0))}</div></div>
+        <div style={{background:"#fff",borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.text}}><div style={{fontSize:9,color:T.sub}}>Containers Affected</div><div style={{fontSize:22,fontWeight:700,color:T.text}}>{allContainers.filter(c=>c.fpStatus!=="Green").length+Math.round(predDays*4.2)}</div></div>
+        <div style={{background:T.redBg,borderRadius:8,padding:"8px 12px",borderTop:"2px solid "+T.red}}><div style={{fontSize:9,color:T.red}}>If No Action</div><div style={{fontSize:22,fontWeight:700,color:T.red}}>{fmt(allContainers.reduce((s,c)=>s+c.todayCost,0))}</div></div>
       </div>
     </div>
     {/* COST FORECAST */}
@@ -567,7 +570,7 @@ function OptimizerPage(){
           <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:c.c}}>{fmt(c.predicted)}</td>
         </tr>)}</tbody>
       </table>
-      <Insight text={"If no containers are cleared by "+predDate+", your portfolio accumulates "+fmt(predCost.reduce((s,c)=>s+c.predicted,0))+" in additional charges. Use the planner below to prioritize."}/>
+      <Insight text={"If no containers are cleared by "+predDate+", your portfolio accumulates "+fmt(allContainers.reduce((s,c)=>s+c.todayCost,0))+" in avoidable charges across "+(allContainers.filter(c=>c.fpStatus!=="Green").length+Math.round(predDays*4.2))+" at-risk containers. Use the planner below to prioritize."}/>
     </Card>
 
     {/* CHARGE BREAKDOWN */}
