@@ -70,6 +70,7 @@ function TopNav({page,setPage}){return <div style={{background:"#fff",borderBott
 
 // ═══ MODULE 1: COMMAND CENTER ═══
 function HomePage({setPage}){
+  const fthRef=useRef(null);
   const cm=BASE.costMatrix;const fth=BASE.freeTimeHealth;const sd=BASE.stageDays;const st=BASE.stages;
   const _mc=BASE.monthlyCost;const _prev=_mc[_mc.length-2];const _curr=_mc[_mc.length-1];
   const mom=momPct(_curr.total,_prev.total);
@@ -116,7 +117,7 @@ function HomePage({setPage}){
         <div style={{fontSize:9,fontWeight:600,color:T.sub,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Est. Daily Burn</div>
         <div style={{fontSize:22,fontWeight:800,color:T.red}}>{fmt(topBurn)}</div>
         <div style={{fontSize:9,color:T.sub,marginTop:2}}>per day if no action</div>
-        <div onClick={()=>document.getElementById("freeTimeHealth")&&document.getElementById("freeTimeHealth").scrollIntoView({behavior:"smooth"})} style={{fontSize:9,color:T.blueL,fontWeight:600,cursor:"pointer",marginTop:6}}>{"See breakdown ↓"}</div>
+        <div onClick={()=>fthRef.current?.scrollIntoView({behavior:"smooth"})} style={{fontSize:9,color:T.blueL,fontWeight:600,cursor:"pointer",marginTop:6}}>{"See breakdown ↓"}</div>
       </Card>
     </div>
 
@@ -193,7 +194,7 @@ function HomePage({setPage}){
         {breakdownToggle==="location"&&<div style={{fontSize:9,color:T.dim,marginTop:6,lineHeight:1.4}}>Combined D&D containers are billed under a single joint tariff. Detention and Demurrage rows reflect separately-billed contracts only — no double-counting.</div>}
         <Insight text={(()=>{const cats=[{n:"Combined D&D",v:cm.dnd_origin.total},{n:"Detention",v:cm.detention_origin.total},{n:"Demurrage",v:cm.demurrage_origin.total},{n:"Storage",v:cm.storage_origin.total}];const top=cats.reduce((a,b)=>b.v>a.v?b:a);return top.n+" at origin ("+fmt(top.v)+") accounts for "+Math.round(top.v/BASE.grandTotal*100)+"% of total exposure. This is your largest cost bucket.";})()}/>
       </Card>
-      <Card id="freeTimeHealth">
+      <div ref={fthRef}><Card>
         <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Free Time Health</div>
         <div style={{fontSize:11,color:T.sub,marginBottom:4}}>Distribution of containers by free period status</div>
         <div style={{fontSize:9,color:T.dim,marginBottom:10,lineHeight:1.4}}>Counts reflect risk events, not unique containers. One container may appear in multiple categories.</div>
@@ -209,7 +210,7 @@ function HomePage({setPage}){
           </div>
           <div style={{height:6,background:T.card2,borderRadius:3,overflow:"hidden",boxShadow:"inset 0 1px 2px rgba(0,0,0,.06)"}}><div style={{height:"100%",width:Math.round(b.count/tot*100)+"%",background:b.color,borderRadius:3}}/></div>
         </div>;})}
-      </Card>
+      </Card></div>
     </div>
     <div style={{height:1,background:T.border+"40",margin:"6px 0 14px"}}/>
     {/* INSIGHTS */}
@@ -713,6 +714,7 @@ function OptimizerPage(){
           </div>)}
         </div>;
       })()}
+      {groupA.active.length>0&&groupB.active.length>0&&aFpStatus===bFpStatus&&aCat===bCat&&aRisk===bRisk&&aCostBand===bCostBand&&aPolF===bPolF&&aPodF===bPodF&&aCarF===bCarF&&aTopN===bTopN&&<div style={{background:T.amberBg,borderRadius:6,padding:"6px 10px",marginTop:8,borderLeft:"3px solid "+T.amber}}><div style={{fontSize:9,color:T.amber,fontWeight:600}}>⚠ Groups A and B have identical filters — comparison will always show $0 difference. Change at least one filter to make this meaningful.</div></div>}
       {groupA.active.length>0&&groupB.active.length>0&&(()=>{const aPs=new Set(groupA.active.map(c=>c.po));const bPs=new Set(groupB.active.map(c=>c.po));const aEU=[...aPs].some(p=>p.startsWith("DE")||p.startsWith("NL")||p.startsWith("BE"));const aAS=[...aPs].some(p=>p.startsWith("CN")||p.startsWith("SG")||p.startsWith("TW")||p.startsWith("JP")||p.startsWith("TH")||p.startsWith("MY")||p.startsWith("PH"));const bEU=[...bPs].some(p=>p.startsWith("DE")||p.startsWith("NL")||p.startsWith("BE"));const bAS=[...bPs].some(p=>p.startsWith("CN")||p.startsWith("SG")||p.startsWith("TW")||p.startsWith("JP")||p.startsWith("TH")||p.startsWith("MY")||p.startsWith("PH"));const cross=(aEU&&bAS)||(aAS&&bEU);return cross?<div style={{background:T.amberBg,borderRadius:6,padding:"6px 10px",marginTop:8,borderLeft:"3px solid "+T.amber}}><div style={{fontSize:9,color:T.amber,fontWeight:600}}>{"⚠ These groups span different regions (Europe vs Asia). Resources typically cannot be shared across continents. Consider comparing ports within the same region."}</div></div>:null;})()}
       {/* DECISION BAR */}
       {(groupA.active.length>0||groupB.active.length>0)&&<div style={{background:"#fff",borderRadius:8,padding:10,marginTop:10,border:"1px solid "+T.green+"40"}}>
@@ -759,7 +761,7 @@ function HistoryPage({setPage,navToSurcharges}){
 
     {/* PERIOD COMPARISON */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,margin:"12px 0"}}>
-      {(()=>{const mc=monthlyCost;if(mc.length<2)return null;const prev=mc[mc.length-2];const curr=mc[mc.length-1];const costChg=prev.total>0?Math.round((curr.total-prev.total)/prev.total*100):0;const cnChg=prev.containers>0?Math.round(((curr.containers||0)-(prev.containers||0))/(prev.containers||1)*100):0;const prevCpc=prev.containers>0?Math.round(prev.total/prev.containers):0;const currCpc=curr.containers>0?Math.round(curr.total/curr.containers):0;const cpcChg=prevCpc>0?Math.round((currCpc-prevCpc)/prevCpc*100):0;return [{l:"Cost Change",v:(costChg>0?"+":"")+costChg+"%",c:costChg<=0?T.green:T.red,d:prev.month+"→"+curr.month},{l:"Containers",v:(cnChg>0?"+":"")+cnChg+"%",c:cnChg<=0?T.green:T.red,d:(prev.containers||0)+"→"+(curr.containers||0)},{l:"Cost/Container",v:(cpcChg>0?"+":"")+cpcChg+"%",c:cpcChg<=0?T.green:T.red,d:"$"+prevCpc+"→$"+currCpc},{l:"Trend Direction",v:costChg<=0&&cpcChg<=0?"Improving":"Needs Attention",c:costChg<=0&&cpcChg<=0?T.green:T.amber,d:costChg<=0?"Costs declining":"Costs rising"}].map(m=><Card key={m.l} style={{padding:10,textAlign:"center"}}><div style={{fontSize:10,color:T.sub}}>{m.d}</div><div style={{fontSize:18,fontWeight:700,color:m.c}}>{m.v}</div><div style={{fontSize:10,color:T.sub}}>{m.l}</div></Card>);})()}
+      {(()=>{const mc=monthlyCost;if(mc.length<2)return<div style={{fontSize:10,color:T.sub,padding:"8px 0"}}>Period comparison requires at least 2 months of data.</div>;const prev=mc[mc.length-2];const curr=mc[mc.length-1];const costChg=prev.total>0?Math.round((curr.total-prev.total)/prev.total*100):0;const cnChg=prev.containers>0?Math.round(((curr.containers||0)-(prev.containers||0))/(prev.containers||1)*100):0;const prevCpc=prev.containers>0?Math.round(prev.total/prev.containers):0;const currCpc=curr.containers>0?Math.round(curr.total/curr.containers):0;const cpcChg=prevCpc>0?Math.round((currCpc-prevCpc)/prevCpc*100):0;return [{l:"Cost Change",v:(costChg>0?"+":"")+costChg+"%",c:costChg<=0?T.green:T.red,d:prev.month+"→"+curr.month},{l:"Containers",v:(cnChg>0?"+":"")+cnChg+"%",c:cnChg<=0?T.green:T.red,d:(prev.containers||0)+"→"+(curr.containers||0)},{l:"Cost/Container",v:(cpcChg>0?"+":"")+cpcChg+"%",c:cpcChg<=0?T.green:T.red,d:"$"+prevCpc+"→$"+currCpc},{l:"Trend Direction",v:costChg<=0&&cpcChg<=0?"Improving":"Needs Attention",c:costChg<=0&&cpcChg<=0?T.green:T.amber,d:costChg<=0?"Costs declining":"Costs rising"}].map(m=><Card key={m.l} style={{padding:10,textAlign:"center"}}><div style={{fontSize:10,color:T.sub}}>{m.d}</div><div style={{fontSize:18,fontWeight:700,color:m.c}}>{m.v}</div><div style={{fontSize:10,color:T.sub}}>{m.l}</div></Card>);})()}
     </div>
 
     <Card style={{marginTop:14}}>
@@ -771,7 +773,8 @@ function HistoryPage({setPage,navToSurcharges}){
     </Card>
 
     <Card style={{marginTop:14}}>
-      <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Port Benchmarking</div><div style={{fontSize:11,color:T.sub,marginBottom:6}}>Compare port performance. Ports above the portfolio average line are underperforming.</div>
+      <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Port Benchmarking</div><div style={{fontSize:11,color:T.sub,marginBottom:2}}>Compare port performance. Ports above the portfolio average line are underperforming.</div>
+      <div style={{fontSize:9,color:T.dim,marginBottom:8}}>Based on top 10 lanes by volume only. Ports with heavy traffic outside these lanes may be under- or over-represented.</div>
       <div style={{display:"flex",gap:6,marginBottom:10}}><Pill active={portTab==="pol"} onClick={()=>setPortTab("pol")} color={T.amber}>Origin (POL)</Pill><Pill active={portTab==="pod"} onClick={()=>setPortTab("pod")} color={T.purple}>Dest (POD)</Pill></div>
       <ChartBox title="Avg Dwell by Port" h={220}><ResponsiveContainer><BarChart data={(portTab==="pol"?polData:podData).slice(0,8)} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"} vertical={false}/><XAxis type="number" stroke={T.dim} fontSize={10} tickFormatter={v=>v+"d"}/><YAxis type="category" dataKey="port" width={55} stroke={T.dim} fontSize={10}/><Tooltip content={<CTip/>}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/><ReferenceLine x={portfolioAvg} stroke={T.blue} strokeDasharray="6 3" label={{value:"Avg: "+portfolioAvg+"d",position:"top",fontSize:9,fill:T.blue}}/>{portTab==="pol"?[<Bar key="det" dataKey="avgODet" name="Det" fill={T.amber} stackId="p"/>,<Bar key="dem" dataKey="avgODem" name="Dem" fill={T.purple} stackId="p"/>,<Bar key="sto" dataKey="avgOSto" name="Sto" fill={T.green} stackId="p"/>,<Bar key="com" dataKey="avgOComb" name="Comb" fill={T.red} stackId="p" radius={[0,3,3,0]}/>]:[<Bar key="det" dataKey="avgDDet" name="Det" fill={T.amber} stackId="p"/>,<Bar key="dem" dataKey="avgDDem" name="Dem" fill={T.purple} stackId="p"/>,<Bar key="sto" dataKey="avgDSto" name="Sto" fill={T.green} stackId="p"/>,<Bar key="com" dataKey="avgDComb" name="Comb" fill={T.red} stackId="p" radius={[0,3,3,0]}/>]}</BarChart></ResponsiveContainer></ChartBox>
       <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10,marginTop:8}}><thead><tr style={{color:T.dim,fontSize:10,textAlign:"left",background:T.card2}}>{["Port","Vol","Det","Dem","Sto","Comb","Total","Score","Rating"].map(h=><th key={h} style={{padding:"6px 7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Vol","Score"].includes(h)?"right":"left",whiteSpace:"nowrap"}}>{h}{h==="Score"&&<HoverTip text={"Cost-share weighted dwell score. Origin: Det×28%+Dem×13%+Sto×2%+Comb×57%. Dest: Det×19%+Dem×50%+Sto×13%+Comb×18%. Higher = worse."}/>}{h==="Rating"&&<HoverTip text={"High: score > 8. Monitor: 5–8. OK: < 5."}/>}</th>)}</tr></thead>
@@ -788,58 +791,6 @@ function HistoryPage({setPage,navToSurcharges}){
 }
 
 // ═══ MODULE 6: SURCHARGES ═══
-function LaneFocusPanel({lane,onClear,onBack}){
-  if(!lane)return null;
-  const spct=lane.surchargePct||35;const fpct=lane.freightPct||65;
-  const negText=lane.beyondFP>0
-    ?"Avg dwell exceeds free period by "+lane.beyondFP+"d across "+lane.containers+" containers. Ask for "+Math.ceil(lane.beyondFP+1)+" additional free days on renewal — data supports it."
-    :"Dwell is within free period on this lane. If surcharge % is above 35%, negotiate a rate reduction rather than more free days.";
-  return <Card style={{marginBottom:18,borderLeft:"4px solid "+T.blue,background:T.blueBg}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-      <div style={{flex:1}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-          <span style={{fontSize:15,fontWeight:700,fontFamily:"monospace",color:T.text}}>{lane.lane}</span>
-          <Badge color={T.blue}>{lane.containers} containers</Badge>
-          {spct>35&&<SolidBadge color={T.red}>{"D&D "+spct+"% of cost — flag for negotiation"}</SolidBadge>}
-          {spct<=35&&<SolidBadge color={T.green}>{"D&D "+spct+"% — acceptable"}</SolidBadge>}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:10}}>
-          {[{l:"O. Detention",v:lane.avgODet.toFixed(1)+"d",c:T.amber,fp:"5.1d free",over:lane.avgODet>5.1},
-            {l:"O. Demurrage",v:lane.avgODem.toFixed(1)+"d",c:T.purple,fp:"3.1d free",over:lane.avgODem>3.1},
-            {l:"D. Demurrage",v:lane.avgDDem.toFixed(1)+"d",c:T.purple,fp:"3.0d free",over:lane.avgDDem>3.0},
-            {l:"D. Detention",v:lane.avgDDet.toFixed(1)+"d",c:T.amber,fp:"6.0d free",over:lane.avgDDet>6.0},
-            {l:"$/Container",v:"$"+lane.costPerContainer,c:lane.costPerContainer>500?T.red:T.amber,fp:lane.beyondFP>0?lane.beyondFP+"d beyond FP":"Within free period",over:lane.beyondFP>0}
-          ].map(x=><div key={x.l} style={{background:"#fff",borderRadius:8,padding:"8px 10px",borderTop:"2px solid "+(x.over?T.red:x.c),position:"relative"}}>
-            {x.over&&<div style={{position:"absolute",top:4,right:6,fontSize:8,color:T.red,fontWeight:700}}>OVER</div>}
-            <div style={{fontSize:9,color:T.sub}}>{x.l}</div>
-            <div style={{fontSize:15,fontWeight:700,color:x.over?T.red:x.c}}>{x.v}</div>
-            <div style={{fontSize:9,color:T.dim}}>{x.fp}</div>
-          </div>)}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          <div style={{background:"#fff",borderRadius:8,padding:"10px 12px"}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:6}}>Freight vs D&D Surcharge</div>
-            <div style={{display:"flex",height:12,borderRadius:6,overflow:"hidden",marginBottom:6}}>
-              <div style={{width:fpct+"%",background:T.blue,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,color:"#fff",fontWeight:700}}>{fpct+"%"}</span></div>
-              <div style={{width:spct+"%",background:T.red,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,color:"#fff",fontWeight:700}}>{spct+"%"}</span></div>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:10}}>
-              <span style={{color:T.blue,fontWeight:600}}>Base Freight</span>
-              <span style={{color:T.red,fontWeight:600}}>D&D Surcharge</span>
-            </div>
-          </div>
-          <div style={{background:"#fff",borderRadius:8,padding:"10px 12px"}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4}}>Negotiation Position</div>
-            <div style={{fontSize:11,color:T.text,lineHeight:1.5}}>{negText}</div>
-          </div>
-        </div>
-      </div>
-      <button onClick={onClear} style={{background:"none",border:"none",cursor:"pointer",marginLeft:12,padding:4}}><X size={16} color={T.dim}/></button>
-    </div>
-    {onBack&&<NavLink text="← Back to Lane Performance in Historical" onClick={onBack}/>}
-  </Card>;
-}
-
 function SurchargePage({setPage,selectedLane,clearLane}){
   const lanes=useMemo(()=>BASE.topLanes.map(l=>{const td=l.avgODet+l.avgODem+l.avgDDem+l.avgDDet;const fp=BASE.costMatrix.dnd_origin.avgFP;const bp=Math.max(0,+(td-fp).toFixed(2));const cpc=Math.round(bp*72);return{...l,totalDwell:+td.toFixed(2),costPerContainer:cpc,beyondFP:bp};}).sort((a,b)=>b.costPerContainer-a.costPerContainer),[]);
   const[activeLane,setActiveLane]=useState(()=>selectedLane||null);
