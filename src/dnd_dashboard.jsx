@@ -174,7 +174,14 @@ function HomePage({setPage}){
         {breakdownToggle==="category"?(
           <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:11}}>
             <thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>{["Category","Origin","Dest","Total","FP"].map(h=><th key={h} style={{padding:"6px 8px",textAlign:h==="Category"?"left":"right",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{h}</th>)}</tr></thead>
-            <tbody>{COST_CATS.filter(cat=>cm[cat.oKey].total+cm[cat.dKey].total>0).map((cat)=>{const o=cm[cat.oKey];const d=cm[cat.dKey];const isMax=cat.name==="Combined D&D";return <tr key={cat.name} style={{background:isMax?T.redBg+"80":T.card2}}><td style={{padding:"6px 8px",borderRadius:"6px 0 0 6px",borderLeft:isMax?"3px solid "+T.red:undefined}}><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:8,height:8,borderRadius:2,background:cat.color}}/><span style={{fontWeight:700}}>{cat.name}</span></div></td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(o.total)}</td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(d.total)}</td><td style={{padding:"6px 8px",color:cat.color,fontWeight:700,textAlign:"right"}}>{fmt(o.total+d.total)}</td><td style={{padding:"6px 8px",color:T.sub,textAlign:"right",borderRadius:"0 6px 6px 0"}}>{o.avgFP}d</td></tr>;})}
+            <tbody>{COST_CATS.filter(cat=>cm[cat.oKey].total+cm[cat.dKey].total>0).map((cat)=>{const o=cm[cat.oKey];const d=cm[cat.dKey];const isMax=cat.name==="Combined D&D";
+            const catTip={
+              "Detention":"Carrier charges for holding the container beyond the free period before loading (origin) or after discharge (destination). Always billed separately per carrier contract.",
+              "Demurrage":"Port/terminal charges for keeping the container inside the terminal beyond the free period. Usually included in combined D&D rates — shown separately only when procured as a standalone charge.",
+              "Storage":"Warehouse or yard storage charges beyond free time. Often bundled with demurrage — shown separately only when your rate contract distinguishes it.",
+              "Combined D&D":"Single bundled rate covering detention + demurrage (and sometimes storage). Most ocean carrier contracts use this structure. Breakdown into individual components is not available for combined rates."
+            }[cat.name];
+            return <tr key={cat.name} style={{background:isMax?T.redBg+"80":T.card2}}><td style={{padding:"6px 8px",borderRadius:"6px 0 0 6px",borderLeft:isMax?"3px solid "+T.red:undefined}}><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:8,height:8,borderRadius:2,background:cat.color}}/><span style={{fontWeight:700}}>{cat.name}</span>{catTip&&<HoverTip text={catTip}/>}</div></td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(o.total)}</td><td style={{padding:"6px 8px",fontWeight:600,textAlign:"right"}}>{fmt(d.total)}</td><td style={{padding:"6px 8px",color:cat.color,fontWeight:700,textAlign:"right"}}>{fmt(o.total+d.total)}</td><td style={{padding:"6px 8px",color:T.sub,textAlign:"right",borderRadius:"0 6px 6px 0"}}>{o.avgFP}d</td></tr>;})}
             <tr><td colSpan={3} style={{padding:8,fontWeight:600,fontSize:13}}>TOTAL</td><td colSpan={2} style={{padding:8,color:T.red,fontWeight:700,fontSize:14,textAlign:"right"}}>{fmt(BASE.grandTotal)}</td></tr></tbody>
           </table>
         ):(
@@ -359,7 +366,7 @@ function CarrierPage({setPage}){
       const xMax=+(Math.max(cat.fpX*1.5,Math.max(...xs)*1.3+0.3)).toFixed(1);const yMax=+(Math.max(cat.fpY*1.5,Math.max(...ys)*1.3+0.3)).toFixed(1);
       return <div>
       <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:6,flexWrap:"wrap"}}>
-        {[{c:T.red,label:"High Risk (score >70)"},{c:T.amber,label:"Medium (40–70)"},{c:T.green,label:"Low (<40)"}].map(({c,label})=>
+        {[{c:T.red,label:"Both over free period"},{c:T.amber,label:"One side over free period"},{c:T.green,label:"Within free period"}].map(({c,label})=>
           <div key={label} style={{display:"flex",alignItems:"center",gap:5}}><svg width={10} height={10}><circle cx={5} cy={5} r={5} fill={c} fillOpacity={0.75}/></svg><span style={{fontSize:9,color:T.sub}}>{label}</span></div>)}
         <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:8}}><svg width={16} height={10}><circle cx={5} cy={5} r={3} fill={T.dim} fillOpacity={0.5}/><circle cx={13} cy={5} r={5} fill={T.dim} fillOpacity={0.5}/></svg><span style={{fontSize:9,color:T.sub}}>Bubble size = container volume</span></div>
       </div>
@@ -388,11 +395,13 @@ function CarrierPage({setPage}){
                 <div style={{fontSize:9,color:T.sub}}>{"Origin: "+d.x+"d (FP "+cat.fpX+"d)"}</div>
                 <div style={{fontSize:9,color:T.sub}}>{"Dest: "+d.y+"d (FP "+cat.fpY+"d)"}</div>
                 <div style={{fontSize:9,color:T.sub}}>{"Containers: "+d.z}</div>
-                <div style={{fontSize:9,fontWeight:700,color:riskCol(d.risk),marginTop:3}}>{"Risk: "+d.risk}</div>
+                <div style={{fontSize:9,fontWeight:700,color:d.x>cat.fpX&&d.y>cat.fpY?T.red:d.x>cat.fpX||d.y>cat.fpY?T.amber:T.green,marginTop:3}}>{d.x>cat.fpX&&d.y>cat.fpY?"⚠ Both sides over free period":d.x>cat.fpX?"Origin over free period":d.y>cat.fpY?"Destination over free period":"✓ Within free period"}</div>
               </div>;
             }}/>
             <Scatter data={data} shape={({cx,cy,payload})=>{
-              const r=rFromZ(payload.z);const col=riskCol(payload.risk);
+              const r=rFromZ(payload.z);
+              const overX=payload.x>cat.fpX;const overY=payload.y>cat.fpY;
+              const col=overX&&overY?T.red:overX||overY?T.amber:T.green;
               return <g>
                 <circle cx={cx} cy={cy} r={r} fill={col} fillOpacity={0.72} stroke="#fff" strokeWidth={1.3}/>
                 <text x={cx} y={cy-r-3} textAnchor="middle" fontSize={8} fontWeight={700} fill={T.text}>{payload.name}</text>
@@ -550,7 +559,7 @@ if(view==="exceeding"){
               <td style={{padding:"6px 7px",...cell(c.avgDDem,"avgDDem")}}>{c.avgDDem.toFixed(1)}d</td>
               <td style={{padding:"6px 7px",...cell(c.avgDSto,"avgDSto")}}>{c.avgDSto.toFixed(1)}d</td>
               <td style={{padding:"6px 7px",...cell(c.avgDComb,"avgDComb")}}>{c.avgDComb.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td>
+              <td style={{padding:"6px 7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk>70?"High":c.risk>40?"Medium":"Low"}</SolidBadge></td>
             </tr>;
           })}</tbody>
         </table>;
@@ -599,7 +608,7 @@ if(view==="exceeding"){
               <td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
               <td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td>
               <td style={{padding:"5px 6px",color:c.oDet>5.1?T.red:T.green,fontWeight:700,textAlign:"center"}}>{c.oDet}d <span style={{fontSize:8,color:T.sub,fontWeight:400}}>(avg: {cd?.avgODet.toFixed(1)}d)</span></td>
-              <td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td>
+              <td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:c.risk>=50?T.amber:T.green}>{c.risk>=75?"High":c.risk>=50?"Medium":"Low"}</SolidBadge></td>
             </tr>)}
             </tbody>
           </table>
