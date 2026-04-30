@@ -596,9 +596,24 @@ function OptimizerPage(){
   const[bSortCol,setBSortCol]=useState("todayCost");const[bSortDir,setBSortDir]=useState("desc");
 
   const predDays=useMemo(()=>Math.max(0,Math.round((new Date(predDate)-new Date(new Date().toISOString().slice(0,10)))/86400000)),[predDate]);
-  // Daily burn rates per category derived from portfolio totals ÷ avg FP breach days
-  const CAT_DAILY={Detention:Math.round((BASE.costMatrix.detention_origin.total+BASE.costMatrix.detention_destination.total)/(BASE.costMatrix.detention_origin.withCost*3.2||1)),Demurrage:Math.round((BASE.costMatrix.demurrage_origin.total+BASE.costMatrix.demurrage_destination.total)/(BASE.costMatrix.demurrage_origin.withCost*2.1||1)),Storage:Math.round((BASE.costMatrix.storage_origin.total+BASE.costMatrix.storage_destination.total)/(BASE.costMatrix.storage_origin.withCost*1.8||1)),Combined:Math.round((BASE.costMatrix.dnd_origin.total+BASE.costMatrix.dnd_destination.total)/(BASE.costMatrix.dnd_origin.withCost*4.1||1))};
-  const predCost=useMemo(()=>[{n:"Detention",fp:5.1,c:T.amber,dk:"Detention"},{n:"Demurrage",fp:3.1,c:T.purple,dk:"Demurrage"},{n:"Storage",fp:3.1,c:T.green,dk:"Storage"},{n:"Combined",fp:9.9,c:T.red,dk:"Combined"}].map(cat=>{const bp=Math.max(0,predDays-cat.fp);const dr=CAT_DAILY[cat.dk]||100;const affected=predDays===0?0:Math.round(bp*2.8);const predicted=Math.round(bp*dr*Math.max(1,affected));return{...cat,beyondFP:bp,dailyRate:dr,predicted};}),[predDays]);
+  const CAT_META={Detention:{fp:5.1,c:T.amber},Demurrage:{fp:3.1,c:T.purple},Storage:{fp:3.1,c:T.green},"Combined D&D":{fp:9.9,c:T.red}};
+  // predCost derived from allContainers so table always matches widget total
+  const predCost=useMemo(()=>{
+    const grouped={};
+    CDATA.topRisk.forEach(c=>{
+      const key=c.cat in CAT_META?c.cat:"Combined D&D";
+      if(!grouped[key])grouped[key]={total:0,count:0,totalDaily:0};
+      const daily=Math.round((c.cost3d-c.cost)/3);
+      const todayCost=daily*Math.max(1,predDays);
+      grouped[key].total+=todayCost;
+      grouped[key].count+=1;
+      grouped[key].totalDaily+=daily;
+    });
+    return Object.entries(CAT_META).map(([n,meta])=>{
+      const g=grouped[n]||{total:0,count:0,totalDaily:0};
+      return{n,fp:meta.fp,c:meta.c,containers:g.count,dailyRate:g.count>0?Math.round(g.totalDaily/g.count):0,predicted:g.total};
+    });
+  },[predDays]);
 
   const allContainers=useMemo(()=>CDATA.topRisk.map(c=>{
     const d3=c.cost3d-c.cost;const d7=c.cost7d-c.cost;const fp=5.1;const daily=Math.round(d3/3);
@@ -676,14 +691,24 @@ function OptimizerPage(){
     <Card style={{marginBottom:14,borderLeft:"3px solid "+T.blue}}>
       <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Cost Forecast</div>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-        <thead><tr style={{background:T.card2}}><th style={{padding:"8px 10px",textAlign:"left",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"6px 0 0 6px"}}>Category</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Free Period</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Beyond FP</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Daily Rate</th><th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"0 6px 6px 0"}}>Predicted Cost</th></tr></thead>
+        <thead><tr style={{background:T.card2}}>
+          <th style={{padding:"8px 10px",textAlign:"left",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"6px 0 0 6px"}}>Category</th>
+          <th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Free Period</th>
+          <th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Containers</th>
+          <th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600}}>Avg $/Container/Day</th>
+          <th style={{padding:"8px 10px",textAlign:"right",color:T.dim,fontSize:10,fontWeight:600,borderRadius:"0 6px 6px 0"}}>Projected Cost</th>
+        </tr></thead>
         <tbody>{predCost.map((c,i)=><tr key={c.n} style={{background:i%2===0?"#fff":T.card2+"80",borderBottom:"1px solid "+T.border+"40"}}>
           <td style={{padding:"8px 10px"}}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:8,height:8,borderRadius:2,background:c.c,flexShrink:0}}/><span style={{fontWeight:600}}>{c.n}</span></div></td>
           <td style={{padding:"8px 10px",textAlign:"right",color:T.sub}}>{c.fp}d</td>
-          <td style={{padding:"8px 10px",textAlign:"right",color:c.beyondFP>0?T.red:T.green,fontWeight:700}}>{c.beyondFP.toFixed(1)}d</td>
-          <td style={{padding:"8px 10px",textAlign:"right",color:T.sub}}>{"$"+c.dailyRate+"/d"}</td>
-          <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:c.c}}>{fmt(c.predicted)}</td>
-        </tr>)}</tbody>
+          <td style={{padding:"8px 10px",textAlign:"right",color:T.sub}}>{c.containers}</td>
+          <td style={{padding:"8px 10px",textAlign:"right",color:T.sub}}>{c.containers>0?"$"+c.dailyRate+"/d":"—"}</td>
+          <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:c.predicted>0?c.c:T.dim}}>{c.predicted>0?fmt(c.predicted):"—"}</td>
+        </tr>)}
+        <tr style={{background:T.card2,borderTop:"2px solid "+T.border}}>
+          <td colSpan={4} style={{padding:"8px 10px",fontWeight:700,fontSize:11}}>Total</td>
+          <td style={{padding:"8px 10px",textAlign:"right",fontWeight:800,fontSize:13,color:T.red}}>{fmt(predCost.reduce((s,c)=>s+c.predicted,0))}</td>
+        </tr></tbody>
       </table>
       {predDays===0?<div style={{background:T.amberBg,border:"1px solid "+T.amber+"40",borderRadius:8,padding:"8px 12px",marginTop:8,borderLeft:"3px solid "+T.amber}}><div style={{fontSize:11,color:T.amber,fontWeight:600}}>Select a future date to see cost projections. Today's view shows current baseline only.</div></div>:<Insight text={"If no containers are cleared by "+predDate+", your portfolio accumulates "+fmt(allContainers.reduce((s,c)=>s+c.todayCost,0))+" in avoidable charges across "+allContainers.filter(c=>c.fpStatus!=="Green").length+" at-risk containers. Use the planner below to prioritize."}/>}
     </Card>
