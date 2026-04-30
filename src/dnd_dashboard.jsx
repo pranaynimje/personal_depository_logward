@@ -658,7 +658,17 @@ function OptimizerPage(){
   const resetAll=()=>{setAFpStatus("All");setACat("All");setARisk("All");setACostBand("All");setAPolF("All");setAPodF("All");setACarF("All");setATopN("All");setBFpStatus("All");setBCat("All");setBRisk("All");setBCostBand("All");setBPolF("All");setBPodF("All");setBCarF("All");setBTopN("All");};
 
   // Charge breakdown scales with forecast date — each day adds proportional accrual to base portfolio
-  const chargeData=useMemo(()=>{const g=predDays===0?1:1+predDays*0.018;return[{side:"Origin",Detention:Math.round(BASE.costMatrix.detention_origin.total*g),Demurrage:Math.round(BASE.costMatrix.demurrage_origin.total*g),Storage:Math.round(BASE.costMatrix.storage_origin.total*g),"Combined D&D":Math.round(BASE.costMatrix.dnd_origin.total*g)},{side:"Dest",Detention:Math.round(BASE.costMatrix.detention_destination.total*g),Demurrage:Math.round(BASE.costMatrix.demurrage_destination.total*g),Storage:Math.round(BASE.costMatrix.storage_destination.total*g),"Combined D&D":Math.round(BASE.costMatrix.dnd_destination.total*g)}];},[predDays]);
+  const chargeData=useMemo(()=>{
+    const acc={Origin:{Detention:0,Demurrage:0,Storage:0,"Combined D&D":0},Dest:{Detention:0,Demurrage:0,Storage:0,"Combined D&D":0}};
+    CDATA.topRisk.forEach(c=>{
+      const daily=Math.round((c.cost3d-c.cost)/3);
+      const val=daily*Math.max(1,predDays);
+      const sideKey=["Gate Out POD","Discharge POD","Empty Return"].includes(c.stage)?"Dest":"Origin";
+      const catKey=c.cat in acc.Origin?c.cat:"Combined D&D";
+      acc[sideKey][catKey]+=val;
+    });
+    return[{side:"Origin",...acc.Origin},{side:"Dest",...acc.Dest}];
+  },[predDays]);
 
   const ContainerCard=({c,dimmed})=><div style={{display:"flex",justifyContent:"space-between",padding:"5px 8px",borderRadius:6,marginBottom:2,background:"#fff",opacity:dimmed?.3:1,borderLeft:"3px solid "+catColor(c.cat)}}>
     <div><div style={{fontSize:10,fontWeight:600}}>{c.cn}</div><div style={{fontSize:9,color:T.sub}}>{c.ca+" | "+c.po+"→"+c.pd+" | "+c.fpStatus}</div></div>
@@ -714,7 +724,7 @@ function OptimizerPage(){
     </Card>
 
     {/* CHARGE BREAKDOWN */}
-    <ChartBox title="Split By Charge Type & Location" sub="All 4 charge types compared across origin and destination" h={200} insight={(()=>{const cats=[{n:"Combined D&D",o:BASE.costMatrix.dnd_origin.total,d:BASE.costMatrix.dnd_destination.total},{n:"Detention",o:BASE.costMatrix.detention_origin.total,d:BASE.costMatrix.detention_destination.total},{n:"Demurrage",o:BASE.costMatrix.demurrage_origin.total,d:BASE.costMatrix.demurrage_destination.total}];const top=cats.reduce((a,b)=>b.o>a.o?b:a);return top.n+" at origin ("+fmt(top.o)+") is the dominant charge type. "+(top.n==="Combined D&D"?"Evaluate whether separate rates would be cheaper in Surcharges tab.":"Focus on reducing origin "+top.n.toLowerCase()+" dwell.");})()}><ResponsiveContainer><BarChart data={chargeData}><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="side" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><Tooltip content={<CTip/>}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/><Bar dataKey="Detention" fill={T.amber}/><Bar dataKey="Demurrage" fill={T.purple}/><Bar dataKey="Storage" fill={T.green}/><Bar dataKey="Combined D&D" fill={T.red}/></BarChart></ResponsiveContainer></ChartBox>
+    <ChartBox title="Split By Charge Type & Location" sub="All 4 charge types compared across origin and destination" h={200} insight={(()=>{const o=chargeData[0];const cats=["Detention","Demurrage","Storage","Combined D&D"].map(k=>({n:k,v:o[k]||0}));const top=cats.reduce((a,b)=>b.v>a.v?b:a);return top.n+" at origin ("+fmt(top.v)+") is the dominant charge type. "+(top.n==="Combined D&D"?"Evaluate whether separate rates would be cheaper in Surcharges tab.":"Focus on reducing origin "+top.n.toLowerCase()+" dwell.");})()}><ResponsiveContainer><BarChart data={chargeData}><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="side" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><Tooltip content={<CTip/>}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/><Bar dataKey="Detention" fill={T.amber}/><Bar dataKey="Demurrage" fill={T.purple}/><Bar dataKey="Storage" fill={T.green}/><Bar dataKey="Combined D&D" fill={T.red}/></BarChart></ResponsiveContainer></ChartBox>
 
     {/* PRIORITIZATION PLANNER */}
     <Card style={{marginBottom:14,background:T.actionBg,border:"1px solid "+T.blue+"15",boxShadow:"0 2px 8px rgba(37,99,235,.06)"}}>
