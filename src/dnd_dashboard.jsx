@@ -470,69 +470,110 @@ if(view==="exceeding"){
     </Card>
 
     <Card style={{marginTop:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-        <div><div style={{fontSize:14,fontWeight:600}}>Carrier Scorecard <span style={{fontSize:10,fontWeight:400,color:T.blue}}>— click to drill down</span></div>
-        <div style={{fontSize:11,color:T.sub}}>Carrier scores are for evaluation only. Business relationships and other factors should inform decisions.</div></div>
-        <DlBtn onClick={()=>dlCSV("carrier_scorecard_"+new Date().toISOString().slice(0,10),["Carrier","Volume","O.Det","O.Dem","O.Sto","O.Comb","D.Det","D.Dem","D.Sto","D.Comb","O.BFP","D.BFP","Risk Score"],[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>[c.name,c.containers,c.avgODet,c.avgODem,c.avgOSto,c.avgOComb,c.avgDDet,c.avgDDem,c.avgDSto,c.avgDComb,c.beyondFP,c.beyondFPDest,c.risk]))}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+        <div>
+          <div style={{fontSize:14,fontWeight:600}}>Carrier Scorecard <span style={{fontSize:10,fontWeight:400,color:T.blue}}>— click any row to see containers</span></div>
+          <div style={{fontSize:10,color:T.sub,marginTop:2}}>Avg Score = portfolio average dwell vs free period. <span style={{color:T.amber,fontWeight:600}}>Red cell = avg dwell exceeds free period.</span> Sorted by Avg Score.</div>
+        </div>
+        <DlBtn onClick={()=>dlCSV("carrier_scorecard_"+new Date().toISOString().slice(0,10),["Carrier","Containers","O.Det avg(d)","O.Dem avg(d)","O.Sto avg(d)","O.Comb avg(d)","D.Det avg(d)","D.Dem avg(d)","D.Sto avg(d)","D.Comb avg(d)","Avg Score"],[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>[c.name,c.containers,c.avgODet,c.avgODem,c.avgOSto,c.avgOComb,c.avgDDet,c.avgDDem,c.avgDSto,c.avgDComb,c.risk]))}/>
       </div>
       {(()=>{
-        const hStyle=(h)=>({padding:"7px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",fontSize:9,
-          textAlign:["Vol","O.BFP","D.BFP","Score"].includes(h)?"right":"left",
-          color:T.dim,background:T.card2,whiteSpace:"nowrap"});
-        const cols=["Carrier","Vol","O.Det","O.Dem","O.Sto","O.Comb","D.Det","D.Dem","D.Sto","D.Comb","O.BFP","D.BFP","Score"];
-        const colKeys={"O.Det":"avgODet","O.Dem":"avgODem","O.Sto":"avgOSto","O.Comb":"avgOComb","D.Det":"avgDDet","D.Dem":"avgDDem","D.Sto":"avgDSto","D.Comb":"avgDComb"};
-        const fpMap={"O.Det":5.1,"O.Dem":3.1,"O.Sto":3.1,"O.Comb":9.9,"D.Det":6.0,"D.Dem":3.0,"D.Sto":3.0,"D.Comb":12.0};
-        return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
-          <thead><tr>{cols.map(h=><th key={h} style={hStyle(h)}>{h}
-            {h==="Score"&&<HoverTip text="Days beyond FP per category, weighted by cost impact. O.Det×15, O.Dem×10, O.Sto×6, O.Comb×10, D.Det×12, D.Dem×8, D.Sto×5, D.Comb×8. Capped at 100. Higher = worse."/>}
-            {h==="O.BFP"&&<HoverTip text="Origin Beyond Free Period: avgODet − 5.1d. Positive = containers in paid origin detention tiers."/>}
-            {h==="D.BFP"&&<HoverTip text="Destination Beyond Free Period: avgDDet − 6.0d. Positive = containers in paid destination detention tiers."/>}
-            {h==="O.Comb"&&<HoverTip text="Avg Combined D&D dwell at origin. FP = 9.9d. Red if exceeding combined free period."/>}
-            {h==="D.Comb"&&<HoverTip text="Avg Combined D&D dwell at destination. FP = 12.0d. Red if exceeding combined free period."/>}
-          </th>)}</tr></thead>
+        const fpMap={"avgODet":5.1,"avgODem":3.1,"avgOSto":3.1,"avgOComb":9.9,"avgDDet":6.0,"avgDDem":3.0,"avgDSto":3.0,"avgDComb":12.0};
+        const cell=(val,key)=>({fontWeight:600,color:val>fpMap[key]?T.red:T.green,background:val>fpMap[key]?"#FFF5F5":"transparent"});
+        const th=(label,right,tip)=><th style={{padding:"6px 7px",fontWeight:600,fontSize:9,textTransform:"uppercase",letterSpacing:"0.4px",color:T.dim,background:T.card2,textAlign:right?"right":"left",whiteSpace:"nowrap"}}>{label}{tip&&<HoverTip text={tip}/>}</th>;
+        return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px",fontSize:10}}>
+          <thead>
+            <tr>
+              <th colSpan={2} style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.sub,background:T.card2,textAlign:"left"}}></th>
+              <th colSpan={4} style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.amber,background:"#FFF8EE",textAlign:"center",borderRadius:"6px 6px 0 0"}}>— ORIGIN —</th>
+              <th colSpan={4} style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.purple,background:T.purpleBg,textAlign:"center",borderRadius:"6px 6px 0 0"}}>— DESTINATION —</th>
+              <th style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.text,background:T.card2,textAlign:"right"}}></th>
+            </tr>
+            <tr>
+              {th("Carrier")} {th("Vol",true)}
+              {th("Det",false,"Avg detention dwell at origin. Free period = 5.1d")}
+              {th("Dem",false,"Avg demurrage dwell at origin. Free period = 3.1d")}
+              {th("Sto",false,"Avg storage dwell at origin. Free period = 3.1d")}
+              {th("Comb",false,"Avg combined D&D dwell at origin. Free period = 9.9d")}
+              {th("Det",false,"Avg detention dwell at destination. Free period = 6.0d")}
+              {th("Dem",false,"Avg demurrage dwell at destination. Free period = 3.0d")}
+              {th("Sto",false,"Avg storage dwell at destination. Free period = 3.0d")}
+              {th("Comb",false,"Avg combined D&D dwell at destination. Free period = 12.0d")}
+              {th("Avg Score",true,"Based on how far each carrier's average dwell exceeds the free period across all categories. Score 0 = all averages within free period. Does NOT reflect individual container outliers — click the row to see those.")}
+            </tr>
+          </thead>
           <tbody>{[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>{
             const sel=selCarrier===c.name;
             const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;
-            const hiCol=(key)=>colKeys[key]?{fontWeight:600,color:c[colKeys[key]]>fpMap[key]?T.red:T.green}:{color:T.sub};
-            return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:T.card2,cursor:"pointer"}}>
-              <td style={{padding:"7px",borderRadius:"6px 0 0 6px",fontWeight:600}}>{c.name}{sel&&<ChevronDown size={10} color={T.blue}/>}</td>
-              <td style={{padding:"7px",textAlign:"right",color:T.sub}}>{c.containers}</td>
-              <td style={{padding:"7px",...hiCol("O.Det")}}>{c.avgODet.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("O.Dem")}}>{c.avgODem.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("O.Sto")}}>{c.avgOSto.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("O.Comb")}}>{c.avgOComb.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("D.Det")}}>{c.avgDDet.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("D.Dem")}}>{c.avgDDem.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("D.Sto")}}>{c.avgDSto.toFixed(1)}d</td>
-              <td style={{padding:"7px",...hiCol("D.Comb")}}>{c.avgDComb.toFixed(1)}d</td>
-              <td style={{padding:"7px",textAlign:"right",color:c.beyondFP>0?T.red:T.green,fontWeight:600}}>{c.beyondFP>0?"+"+c.beyondFP+"d":"Within FP"}</td>
-              <td style={{padding:"7px",textAlign:"right",color:c.beyondFPDest>0?T.red:T.green,fontWeight:600}}>{c.beyondFPDest>0?"+"+c.beyondFPDest+"d":"Within FP"}</td>
-              <td style={{padding:"7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td>
+            const topRiskCount=CDATA.topRisk.filter(r=>r.ca===c.name).length;
+            return <tr key={c.name} onClick={()=>setSelCarrier(sel?null:c.name)} style={{background:sel?T.blueBg:"#fff",cursor:"pointer",transition:"filter .1s"}} onMouseEnter={e=>e.currentTarget.style.filter="brightness(0.97)"} onMouseLeave={e=>e.currentTarget.style.filter=""}>
+              <td style={{padding:"6px 7px",borderRadius:"6px 0 0 6px",fontWeight:700,whiteSpace:"nowrap"}}>
+                {c.name}
+                {topRiskCount>0&&<span style={{marginLeft:5,fontSize:8,fontWeight:700,color:T.red,background:T.redBg,padding:"1px 5px",borderRadius:8}}>{topRiskCount+" priority"}</span>}
+                {sel&&<ChevronDown size={10} color={T.blue} style={{marginLeft:4}}/>}
+              </td>
+              <td style={{padding:"6px 7px",textAlign:"right",color:T.sub}}>{c.containers}</td>
+              <td style={{padding:"6px 7px",...cell(c.avgODet,"avgODet")}}>{c.avgODet.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgODem,"avgODem")}}>{c.avgODem.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgOSto,"avgOSto")}}>{c.avgOSto.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgOComb,"avgOComb")}}>{c.avgOComb.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgDDet,"avgDDet")}}>{c.avgDDet.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgDDem,"avgDDem")}}>{c.avgDDem.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgDSto,"avgDSto")}}>{c.avgDSto.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",...cell(c.avgDComb,"avgDComb")}}>{c.avgDComb.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk}</SolidBadge></td>
             </tr>;
           })}</tbody>
         </table>;
       })()}
+      <div style={{fontSize:9,color:T.dim,marginTop:6}}>FP thresholds: Origin Det 5.1d · Dem 3.1d · Sto 3.1d · Comb 9.9d &nbsp;|&nbsp; Dest Det 6.0d · Dem 3.0d · Sto 3.0d · Comb 12.0d. Carrier scores are for evaluation only.</div>
     </Card>
 
     {selCarrier&&(()=>{const rows=CDATA.topRisk.filter(c=>c.ca===selCarrier);const cd=BASE.carriers[selCarrier];const risk=cd?Math.min(100,Math.round(Math.max(0,cd.avgODet-5.1)*15+Math.max(0,cd.avgODem-3.1)*10+Math.max(0,cd.avgOSto-3.1)*6+Math.max(0,cd.avgOComb-9.9)*10+Math.max(0,cd.avgDDet-6.0)*12+Math.max(0,cd.avgDDem-3.0)*8+Math.max(0,cd.avgDSto-3.0)*5+Math.max(0,cd.avgDComb-12.0)*8)):0;
       return <Card style={{marginTop:10}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:13,fontWeight:700}}>{rows.length?"Top Risk — "+selCarrier:selCarrier+" — Carrier Summary"}</div><button onClick={()=>setSelCarrier(null)} style={{background:"none",border:"none",cursor:"pointer"}}><X size={14} color={T.dim}/></button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700}}>{selCarrier} — Container Detail</div>
+            <div style={{fontSize:10,color:T.sub,marginTop:2}}>Avg Score (scorecard): <span style={{fontWeight:700,color:risk<40?T.green:risk<70?T.amber:T.red}}>{risk}</span> — based on portfolio average dwell vs free period.</div>
+          </div>
+          <button onClick={()=>setSelCarrier(null)} style={{background:"none",border:"none",cursor:"pointer"}}><X size={14} color={T.dim}/></button>
+        </div>
+        {rows.length>0&&<div style={{background:T.amberBg,border:"1px solid "+T.amber+"30",borderRadius:8,padding:"7px 12px",marginBottom:10,fontSize:10,color:T.sub}}>
+          <span style={{fontWeight:700,color:T.amber}}>Note: </span>{"Avg Score reflects the carrier's average across all "+cd?.containers+" containers. Individual containers below may have higher risk scores if specific shipments ran significantly over free period — this does not mean the carrier's overall performance is poor."}
+        </div>}
         {!rows.length?(
           <div>
             <div style={{background:T.greenBg,border:"1px solid "+T.green+"40",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.green,marginBottom:4}}>{"✓ No containers from "+selCarrier+" in the current priority queue"}</div>
-              <div style={{fontSize:10,color:T.sub}}>{"None of this carrier's "+( cd?.containers||"—")+" portfolio containers breach the top-risk threshold."}</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.green,marginBottom:4}}>{"✓ No priority containers for "+selCarrier}</div>
+              <div style={{fontSize:10,color:T.sub}}>{"None of this carrier's "+(cd?.containers||"—")+" containers breach the top-risk threshold. Avg Score "+risk+" confirms performance within acceptable range."}</div>
             </div>
             {cd&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-              {[{l:"Portfolio",v:cd.containers+" containers",c:T.text},{l:"O.Det avg",v:cd.avgODet+"d",c:cd.avgODet>5.1?T.red:T.green},{l:"O.Dem avg",v:cd.avgODem+"d",c:cd.avgODem>3.1?T.red:T.green},{l:"O.Comb avg",v:cd.avgOComb+"d",c:cd.avgOComb>9.9?T.red:T.green},{l:"D.Det avg",v:cd.avgDDet+"d",c:cd.avgDDet>6.0?T.red:T.green},{l:"D.Dem avg",v:cd.avgDDem+"d",c:cd.avgDDem>3.0?T.red:T.green},{l:"D.Comb avg",v:cd.avgDComb+"d",c:cd.avgDComb>12.0?T.red:T.green},{l:"Risk Score",v:risk,c:risk<40?T.green:risk<70?T.amber:T.red}].map(s=><div key={s.l} style={{background:T.card2,borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
+              {[{l:"Portfolio",v:cd.containers+" containers",c:T.text},{l:"O.Det avg",v:cd.avgODet+"d",c:cd.avgODet>5.1?T.red:T.green},{l:"O.Dem avg",v:cd.avgODem+"d",c:cd.avgODem>3.1?T.red:T.green},{l:"O.Comb avg",v:cd.avgOComb+"d",c:cd.avgOComb>9.9?T.red:T.green},{l:"D.Det avg",v:cd.avgDDet+"d",c:cd.avgDDet>6.0?T.red:T.green},{l:"D.Dem avg",v:cd.avgDDem+"d",c:cd.avgDDem>3.0?T.red:T.green},{l:"D.Comb avg",v:cd.avgDComb+"d",c:cd.avgDComb>12.0?T.red:T.green},{l:"Avg Score",v:risk,c:risk<40?T.green:risk<70?T.amber:T.red}].map(s=><div key={s.l} style={{background:T.card2,borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
                 <div style={{fontSize:14,fontWeight:700,color:s.c}}>{s.v}</div>
                 <div style={{fontSize:9,color:T.sub,marginTop:2}}>{s.l}</div>
               </div>)}
             </div>}
           </div>
         ):(
-          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}><thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>{["Container","Route","Category","Cost","O.Det","Container Risk"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Cost","Container Risk"].includes(h)?"right":"left"}}>{h}{h==="Container Risk"&&<HoverTip text="Individual score based on dwell beyond free period + missing milestones."/>}</th>)}</tr></thead>
-          <tbody>{rows.map((c,i)=><tr key={i} style={{background:T.card2}}><td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td><td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td><td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td><td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td><td style={{padding:"5px 6px",color:c.oDet>5?T.red:T.sub,fontWeight:600}}>{c.oDet}d</td><td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td></tr>)}</tbody></table>
+          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
+            <thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>
+              {["Container","Route","Stage","Category","Current Cost","O.Det (this container)","Container Risk"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Current Cost","Container Risk"].includes(h)?"right":"left",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px"}}>
+                {h}
+                {h==="Container Risk"&&<HoverTip text="Individual container score — how far this specific container's dwell exceeds free period. Can be high even when carrier avg score is low."/>}
+                {h==="O.Det (this container)"&&<HoverTip text="Origin detention dwell for this specific container. Compare to carrier avg in scorecard above."/>}
+              </th>)}
+            </tr></thead>
+            <tbody>{rows.map((c,i)=><tr key={i} style={{background:T.card2}}>
+              <td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td>
+              <td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td>
+              <td style={{padding:"5px 6px",fontSize:9,color:T.sub}}>{c.stage}</td>
+              <td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
+              <td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td>
+              <td style={{padding:"5px 6px",color:c.oDet>5.1?T.red:T.green,fontWeight:700,textAlign:"center"}}>{c.oDet}d <span style={{fontSize:8,color:T.sub,fontWeight:400}}>(avg: {cd?.avgODet.toFixed(1)}d)</span></td>
+              <td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:T.amber}>{c.risk}</SolidBadge></td>
+            </tr>)}
+            </tbody>
+          </table>
         )}
       </Card>;
     })()}
