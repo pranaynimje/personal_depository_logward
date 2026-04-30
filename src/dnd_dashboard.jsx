@@ -14,16 +14,16 @@ const BASE={
 
   carriers:{OOLU:{containers:288,avgODet:9.86,avgODem:0.97,avgDDem:2.78,avgDDet:5.81,avgOSto:2.8,avgDSto:1.9,avgOComb:10.4,avgDComb:7.8,missingMilestones:813},ONEY:{containers:905,avgODet:2.37,avgODem:0.87,avgDDem:2.66,avgDDet:5.48,avgOSto:1.2,avgDSto:1.4,avgOComb:3.6,avgDComb:6.5,missingMilestones:3106},MSCU:{containers:227,avgODet:5.98,avgODem:1.01,avgDDem:2.55,avgDDet:5.59,avgOSto:2.1,avgDSto:1.6,avgOComb:6.2,avgDComb:7.1,missingMilestones:642},MAEU:{containers:229,avgODet:7.77,avgODem:1.0,avgDDem:3.22,avgDDet:5.86,avgOSto:2.6,avgDSto:2.1,avgOComb:10.8,avgDComb:8.4,missingMilestones:744},HLCU:{containers:427,avgODet:5.62,avgODem:0.74,avgDDem:2.39,avgDDet:5.23,avgOSto:1.9,avgDSto:1.5,avgOComb:5.9,avgDComb:6.8,missingMilestones:1301},EGLV:{containers:139,avgODet:2.09,avgODem:0.43,avgDDem:1.38,avgDDet:4.82,avgOSto:0.8,avgDSto:0.9,avgOComb:2.8,avgDComb:5.6,missingMilestones:375},COSU:{containers:141,avgODet:0.73,avgODem:0.82,avgDDem:2.82,avgDDet:5.74,avgOSto:0.5,avgDSto:1.2,avgOComb:2.1,avgDComb:7.4,missingMilestones:451},CMDU:{containers:279,avgODet:6.35,avgODem:1.0,avgDDem:2.79,avgDDet:5.81,avgOSto:2.2,avgDSto:1.7,avgOComb:6.8,avgDComb:7.6,missingMilestones:815}},
   topLanes:[
-    {lane:"DEHAM-CNSHA",containers:34,avgODet:2.52,avgODem:0.94,avgOSto:1.2,avgOComb:3.8,avgDDem:3.12,avgDDet:5.46,avgDSto:0.9,avgDComb:7.2,freightPct:72,surchargePct:28},
-    {lane:"DEHAM-CNYTN",containers:28,avgODet:7.85,avgODem:0.71,avgOSto:2.1,avgOComb:8.9,avgDDem:2.07,avgDDet:5.27,avgDSto:1.4,avgDComb:6.8,freightPct:65,surchargePct:35},
-    {lane:"CNSHA-SGSIN",containers:26,avgODet:3.91,avgODem:0.31,avgOSto:0.8,avgOComb:4.4,avgDDem:0.84,avgDDet:4.34,avgDSto:0.6,avgDComb:4.9,freightPct:80,surchargePct:20},
-    {lane:"DEBRV-CNSHA",containers:24,avgODet:5.5,avgODem:0.83,avgOSto:1.6,avgOComb:6.5,avgDDem:3.06,avgDDet:6.04,avgDSto:1.1,avgDComb:8.2,freightPct:68,surchargePct:32},
-    {lane:"CNSHA-NLRTM",containers:23,avgODet:12.33,avgODem:0.77,avgOSto:2.8,avgOComb:12.1,avgDDem:1.96,avgDDet:4.89,avgDSto:1.7,avgDComb:6.1,freightPct:55,surchargePct:45},
-    {lane:"DEHAM-CNTAO",containers:22,avgODet:8.59,avgODem:0.49,avgOSto:2.3,avgOComb:9.2,avgDDem:1.47,avgDDet:5.46,avgDSto:1.2,avgDComb:6.5,freightPct:62,surchargePct:38},
-    {lane:"DEBRV-USCHS",containers:21,avgODet:4.41,avgODem:1.37,avgOSto:1.4,avgOComb:5.9,avgDDem:3.73,avgDDet:6.59,avgDSto:1.8,avgDComb:9.4,freightPct:60,surchargePct:40},
-    {lane:"DEBRV-TWKEL",containers:19,avgODet:11.64,avgODem:0.8,avgOSto:2.6,avgOComb:11.8,avgDDem:2.81,avgDDet:5.67,avgDSto:1.5,avgDComb:7.1,freightPct:58,surchargePct:42},
-    {lane:"DEHAM-THLCH",containers:19,avgODet:7.9,avgODem:1.52,avgOSto:1.9,avgOComb:9.6,avgDDem:4.09,avgDDet:6.87,avgDSto:2.1,avgDComb:9.8,freightPct:56,surchargePct:44},
-    {lane:"DEHAM-JPNGO",containers:18,avgODet:8.95,avgODem:0.81,avgOSto:2.2,avgOComb:9.8,avgDDem:2.37,avgDDet:4.58,avgDSto:1.3,avgDComb:6.2,freightPct:70,surchargePct:30}],
+    {lane:"DEHAM-CNSHA",carriers:["MAEU","OOLU","ONEY"],containers:34,avgODet:2.52,avgODem:0.94,avgOSto:1.2,avgOComb:3.8,avgDDem:3.12,avgDDet:5.46,avgDSto:0.9,avgDComb:7.2,freightPct:72,surchargePct:28},
+    {lane:"DEHAM-CNYTN",carriers:["HLCU","CMDU"],containers:28,avgODet:7.85,avgODem:0.71,avgOSto:2.1,avgOComb:8.9,avgDDem:2.07,avgDDet:5.27,avgDSto:1.4,avgDComb:6.8,freightPct:65,surchargePct:35},
+    {lane:"CNSHA-SGSIN",carriers:["OOLU","MSCU","COSU"],containers:26,avgODet:3.91,avgODem:0.31,avgOSto:0.8,avgOComb:4.4,avgDDem:0.84,avgDDet:4.34,avgDSto:0.6,avgDComb:4.9,freightPct:80,surchargePct:20},
+    {lane:"DEBRV-CNSHA",carriers:["MAEU","HLCU"],containers:24,avgODet:5.5,avgODem:0.83,avgOSto:1.6,avgOComb:6.5,avgDDem:3.06,avgDDet:6.04,avgDSto:1.1,avgDComb:8.2,freightPct:68,surchargePct:32},
+    {lane:"CNSHA-NLRTM",carriers:["OOLU","ONEY","EGLV"],containers:23,avgODet:12.33,avgODem:0.77,avgOSto:2.8,avgOComb:12.1,avgDDem:1.96,avgDDet:4.89,avgDSto:1.7,avgDComb:6.1,freightPct:55,surchargePct:45},
+    {lane:"DEHAM-CNTAO",carriers:["HLCU","MSCU"],containers:22,avgODet:8.59,avgODem:0.49,avgOSto:2.3,avgOComb:9.2,avgDDem:1.47,avgDDet:5.46,avgDSto:1.2,avgDComb:6.5,freightPct:62,surchargePct:38},
+    {lane:"DEBRV-USCHS",carriers:["MAEU","CMDU"],containers:21,avgODet:4.41,avgODem:1.37,avgOSto:1.4,avgOComb:5.9,avgDDem:3.73,avgDDet:6.59,avgDSto:1.8,avgDComb:9.4,freightPct:60,surchargePct:40},
+    {lane:"DEBRV-TWKEL",carriers:["HLCU","OOLU"],containers:19,avgODet:11.64,avgODem:0.8,avgOSto:2.6,avgOComb:11.8,avgDDem:2.81,avgDDet:5.67,avgDSto:1.5,avgDComb:7.1,freightPct:58,surchargePct:42},
+    {lane:"DEHAM-THLCH",carriers:["MSCU","ONEY"],containers:19,avgODet:7.9,avgODem:1.52,avgOSto:1.9,avgOComb:9.6,avgDDem:4.09,avgDDet:6.87,avgDSto:2.1,avgDComb:9.8,freightPct:56,surchargePct:44},
+    {lane:"DEHAM-JPNGO",carriers:["HLCU","MAEU"],containers:18,avgODet:8.95,avgODem:0.81,avgOSto:2.2,avgOComb:9.8,avgDDem:2.37,avgDDet:4.58,avgDSto:1.3,avgDComb:6.2,freightPct:70,surchargePct:30}],
   monthlyCost:[
     {month:"Jan 26",detention:8420,demurrage:4310,storage:1850,combined:18640,total:33220,oDetention:7900,oDemurrage:4100,oStorage:1600,oCombined:17200,dDetention:520,dDemurrage:210,dStorage:250,dCombined:1440,containers:410},
     {month:"Feb 26",detention:11600,demurrage:5950,storage:2550,combined:25700,total:45800,oDetention:10900,oDemurrage:5660,oStorage:2210,oCombined:24160,dDetention:700,dDemurrage:290,dStorage:340,dCombined:1540,containers:490},
@@ -300,6 +300,7 @@ const CARRIER_VIEWS=[
   {id:"scatter",   label:"Avg Dwell Days"},
   {id:"exceeding", label:"Containers Exceeding Free Days"},
   {id:"cost",      label:"Cost Exposure"},
+  {id:"lanes",     label:"Trade Lanes"},
 ];
 const SCATTER_CATS=[
   {id:"detention",label:"Detention",  xKey:"avgODet",yKey:"avgDDet",fpX:5.1,fpY:6.0,xLabel:"Origin Det (days)",yLabel:"Dest Det (days)",color:T.amber},
@@ -458,14 +459,42 @@ if(view==="exceeding"){
 
     <Card style={{marginBottom:12}}>
       <div style={{fontSize:11,color:T.sub,marginBottom:12}}>{viewLabels[view]}</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+      {view!=="lanes"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
         {SCATTER_CATS.map(cat=>(
           <div key={cat.id} style={{background:T.card2,borderRadius:10,padding:"10px 12px"}}>
             <div style={{fontSize:11,fontWeight:700,color:cat.color,marginBottom:6}}>{cat.label}</div>
             {renderPanel(cat)}
           </div>
         ))}
-      </div>
+      </div>}
+      {view==="lanes"&&(()=>{
+        const lanes=selCarrier?BASE.topLanes.filter(l=>l.carriers&&l.carriers.includes(selCarrier)):BASE.topLanes;
+        const oStat=v=>v>5.1?{t:"Over FP",c:T.red}:v>3.5?{t:"Near FP",c:T.amber}:{t:"OK",c:T.green};
+        const dStat=v=>v>6.0?{t:"Over FP",c:T.red}:v>4.0?{t:"Near FP",c:T.amber}:{t:"OK",c:T.green};
+        return <div>
+          {selCarrier&&<div style={{fontSize:9,color:T.sub,marginBottom:8,fontStyle:"italic"}}>Showing {lanes.length} lane{lanes.length!==1?"s":""} operated by {selCarrier}. Click scorecard row below to filter.</div>}
+          {!selCarrier&&<div style={{fontSize:9,color:T.sub,marginBottom:8}}>All trade lanes — click a carrier in the scorecard to filter by carrier.</div>}
+          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
+            <thead><tr style={{color:T.dim,fontSize:9}}>
+              {["Lane","Carriers","Containers","Avg O.Det","Avg D.Det","Origin Status","Dest Status",""].map(h=><th key={h} style={{padding:"4px 8px",textAlign:["Containers","Avg O.Det","Avg D.Det"].includes(h)?"right":"left",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px"}}>{h}</th>)}
+            </tr></thead>
+            <tbody>{lanes.map((l,i)=>{
+              const os=oStat(l.avgODet);const ds=dStat(l.avgDDet);
+              const bothOver=os.c===T.red&&ds.c===T.red;
+              return <tr key={i} style={{background:T.card2,borderLeft:bothOver?"3px solid "+T.red:"3px solid transparent"}}>
+                <td style={{padding:"6px 8px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:700}}>{l.lane}</td>
+                <td style={{padding:"6px 8px",fontSize:9}}>{(l.carriers||[]).map(c=><span key={c} style={{background:T.blue+"15",color:T.blue,borderRadius:4,padding:"1px 5px",marginRight:3,fontSize:9,fontWeight:600}}>{c}</span>)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:600}}>{l.containers}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",color:l.avgODet>5.1?T.red:T.text,fontWeight:l.avgODet>5.1?700:400}}>{l.avgODet}d</td>
+                <td style={{padding:"6px 8px",textAlign:"right",color:l.avgDDet>6.0?T.red:T.text,fontWeight:l.avgDDet>6.0?700:400}}>{l.avgDDet}d</td>
+                <td style={{padding:"6px 8px"}}><span style={{background:os.c+"18",color:os.c,borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:600}}>{os.t}</span></td>
+                <td style={{padding:"6px 8px"}}><span style={{background:ds.c+"18",color:ds.c,borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:600}}>{ds.t}</span></td>
+                <td style={{padding:"6px 8px",borderRadius:"0 6px 6px 0"}}><span onClick={()=>setPage("surcharges")} style={{cursor:"pointer",color:T.blue,fontSize:9,fontWeight:600}}>Surcharges →</span></td>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>;
+      })()}
       <NavLink text="See port and lane performance trends → Historical" onClick={()=>setPage("history")}/>
     </Card>
 
