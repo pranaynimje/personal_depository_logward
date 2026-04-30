@@ -356,7 +356,13 @@ function CarrierPage({setPage}){
         <div style={{fontSize:10,color:T.sub}}>No action required for {cat.label}. Max observed: {Math.max(...xs).toFixed(1)}d origin, {Math.max(...ys).toFixed(1)}d dest (FP: {cat.fpX}d / {cat.fpY}d).</div>
       </div>;
       const xMax=+(Math.max(cat.fpX*1.5,Math.max(...xs)*1.3+0.3)).toFixed(1);const yMax=+(Math.max(cat.fpY*1.5,Math.max(...ys)*1.3+0.3)).toFixed(1);
-      return <div style={{position:"relative",height:200}}>
+      return <div>
+      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:6,flexWrap:"wrap"}}>
+        {[{c:T.red,label:"High Risk (score >70)"},{c:T.amber,label:"Medium (40–70)"},{c:T.green,label:"Low (<40)"}].map(({c,label})=>
+          <div key={label} style={{display:"flex",alignItems:"center",gap:5}}><svg width={10} height={10}><circle cx={5} cy={5} r={5} fill={c} fillOpacity={0.75}/></svg><span style={{fontSize:9,color:T.sub}}>{label}</span></div>)}
+        <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:8}}><svg width={16} height={10}><circle cx={5} cy={5} r={3} fill={T.dim} fillOpacity={0.5}/><circle cx={13} cy={5} r={5} fill={T.dim} fillOpacity={0.5}/></svg><span style={{fontSize:9,color:T.sub}}>Bubble size = container volume</span></div>
+      </div>
+      <div style={{position:"relative",height:200}}>
         <div style={{position:"absolute",top:4,right:4,fontSize:8,fontWeight:700,color:T.red,opacity:.65,pointerEvents:"none",zIndex:5}}>Both Over ▲</div>
         <div style={{position:"absolute",top:4,left:48,fontSize:8,fontWeight:700,color:T.amber,opacity:.65,pointerEvents:"none",zIndex:5}}>▲ Dest</div>
         <div style={{position:"absolute",bottom:24,right:4,fontSize:8,fontWeight:700,color:T.amber,opacity:.65,pointerEvents:"none",zIndex:5}}>Origin ▶</div>
@@ -393,7 +399,7 @@ function CarrierPage({setPage}){
             }}/>
           </ScatterChart>
         </ResponsiveContainer>
-      </div>;
+      </div></div>;
     }
 if(view==="exceeding"){
       const fpField={detention:"avgODet",demurrage:"avgODem",storage:"avgOSto",combined:"totalO"}[cat.id];
