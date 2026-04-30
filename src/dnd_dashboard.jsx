@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend, Area, AreaChart, ReferenceLine, ScatterChart, Scatter, ZAxis } from "recharts";
 import { AlertTriangle, TrendingUp, TrendingDown, Anchor, Ship, Clock, DollarSign, Package, Target, Zap, Layers, Calendar, Activity, MapPin, Truck, Box, AlertCircle, X, ChevronDown, HelpCircle, ArrowRight, Download } from "lucide-react";
 
@@ -56,7 +56,7 @@ const SolidBadge=({children,color=T.red})=><span style={{background:color,color:
 const Badge=({children,color=T.blue})=><span style={{background:color+"12",color,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:500,whiteSpace:"nowrap"}}>{children}</span>;
 const BigPill=({children,color})=><span style={{background:color+"10",color,padding:"6px 14px",borderRadius:20,fontSize:11,fontWeight:500,whiteSpace:"nowrap",lineHeight:1.3}}>{children}</span>;
 const Pill=({active,onClick,children,color=T.blue})=><button onClick={onClick} style={{padding:"6px 16px",borderRadius:20,border:"1px solid "+(active?color+"50":T.border),background:active?color+"10":"transparent",color:active?color:T.sub,fontSize:11,fontWeight:active?600:400,cursor:"pointer",transition:"all .15s ease"}}>{children}</button>;
-function Card({children,style,onClick,urgency}){const bg=urgency==="critical"?"#FFF0F1":urgency==="warn"?"#FFF8EE":urgency==="action"?T.actionBg:T.card;const bTop=urgency==="critical"?T.red:urgency==="warn"?T.amber:null;return <div onClick={onClick} style={{background:bg,border:bTop?"none":"1px solid "+T.border+"80",borderRadius:14,padding:20,cursor:onClick?"pointer":"default",boxShadow:bTop?"0 2px 12px rgba(0,0,0,.06)":"0 1px 4px rgba(0,0,0,.03), 0 1px 2px rgba(0,0,0,.02)",borderTop:bTop?"3px solid "+bTop:undefined,transition:"all .2s ease",...style}}>{children}</div>;}
+const Card=React.forwardRef(function Card({children,style,onClick,urgency,id},ref){const bg=urgency==="critical"?"#FFF0F1":urgency==="warn"?"#FFF8EE":urgency==="action"?T.actionBg:T.card;const bTop=urgency==="critical"?T.red:urgency==="warn"?T.amber:null;return <div ref={ref} id={id} onClick={onClick} style={{background:bg,border:bTop?"none":"1px solid "+T.border+"80",borderRadius:14,padding:20,cursor:onClick?"pointer":"default",boxShadow:bTop?"0 2px 12px rgba(0,0,0,.06)":"0 1px 4px rgba(0,0,0,.03), 0 1px 2px rgba(0,0,0,.02)",borderTop:bTop?"3px solid "+bTop:undefined,transition:"all .2s ease",...style}}>{children}</div>;});
 function HoverTip({text}){const[s,setS]=useState(false);return <span onMouseEnter={()=>setS(true)} onMouseLeave={()=>setS(false)} style={{position:"relative",cursor:"help",display:"inline-flex",marginLeft:3}}><HelpCircle size={11} color={T.dim}/>{s&&<div style={{position:"absolute",bottom:20,left:-100,width:280,background:T.text,color:"#fff",padding:"8px 12px",borderRadius:8,fontSize:11,lineHeight:1.5,zIndex:99,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>{text}<div style={{position:"absolute",bottom:-4,left:104,width:8,height:8,background:T.text,transform:"rotate(45deg)"}}/></div>}</span>;}
 const SH=({title,sub})=><div style={{marginBottom:18}}><div style={{color:T.text,fontSize:15,fontWeight:700}}>{title}</div>{sub&&<div style={{color:T.sub,fontSize:11,marginTop:2}}>{sub}</div>}</div>;
 const Insight=({text})=><div style={{background:T.blueBg,borderRadius:10,padding:"12px 16px",marginTop:10,borderLeft:"3px solid "+T.blue+"90"}}><div style={{fontSize:12,fontWeight:500,color:"#1E40AF",lineHeight:1.5}}>{text}</div></div>;
@@ -70,7 +70,7 @@ function TopNav({page,setPage}){return <div style={{background:"#fff",borderBott
 
 // ═══ MODULE 1: COMMAND CENTER ═══
 function HomePage({setPage}){
-  const fthRef=useRef(null);
+  const fthRef=useRef(null);const actionRef=useRef(null);
   const cm=BASE.costMatrix;const fth=BASE.freeTimeHealth;const sd=BASE.stageDays;const st=BASE.stages;
   const _mc=BASE.monthlyCost;const _prev=_mc[_mc.length-2];const _curr=_mc[_mc.length-1];
   const mom=momPct(_curr.total,_prev.total);
@@ -105,12 +105,14 @@ function HomePage({setPage}){
         <div style={{fontSize:9,fontWeight:600,color:T.red,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Overdue</div>
         <div style={{fontSize:26,fontWeight:800,color:T.red}}>{fth.expired.toLocaleString()}</div>
         <div style={{fontSize:9,color:T.sub,marginTop:2}}>Free period expired</div>
+        <div onClick={()=>actionRef.current?.scrollIntoView({behavior:"smooth"})} style={{fontSize:9,color:T.red,fontWeight:700,cursor:"pointer",marginTop:6,textDecoration:"underline"}}>See today's action list ↓</div>
       </Card>
       {/* At Risk */}
       <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.amber,background:T.amberBg,display:"flex",flexDirection:"column",justifyContent:"center"}}>
         <div style={{fontSize:9,fontWeight:600,color:T.amber,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>At Risk</div>
         <div style={{fontSize:26,fontWeight:800,color:T.amber}}>{fth.red}</div>
         <div style={{fontSize:9,color:T.sub,marginTop:2}}>Expiring within 48h</div>
+        <div onClick={()=>setPage("optimizer")} style={{fontSize:9,color:T.amber,fontWeight:700,cursor:"pointer",marginTop:6,textDecoration:"underline"}}>Prioritise in Cost Optimizer →</div>
       </Card>
       {/* Daily burn */}
       <Card style={{padding:"16px 14px",borderTop:"3px solid "+(topBurn>0?T.red:T.green),display:"flex",flexDirection:"column",justifyContent:"center"}}>
@@ -199,8 +201,8 @@ function HomePage({setPage}){
         <div style={{fontSize:11,color:T.sub,marginBottom:4}}>Distribution of containers by free period status</div>
         <div style={{fontSize:9,color:T.dim,marginBottom:10,lineHeight:1.4}}>Counts reflect risk events, not unique containers. One container may appear in multiple categories.</div>
         {[
-          {label:"Overdue",desc:"Free period expired",count:fth.expired,color:T.red,action:"Review and clear"},
-          {label:"At Risk",desc:"Expiring within 48 hours",count:fth.red,color:T.amber,action:"Expedite today"},
+          {label:"Overdue",desc:"Free period expired",count:fth.expired,color:T.red,action:"Review and clear",link:"→ See today's action list",onClick:()=>actionRef.current?.scrollIntoView({behavior:"smooth"})},
+          {label:"At Risk",desc:"Expiring within 48 hours",count:fth.red,color:T.amber,action:"Expedite today",link:"→ Prioritise in Cost Optimizer",onClick:()=>setPage("optimizer")},
           {label:"Monitor",desc:"Expiring in 3–5 days",count:fth.yellow,color:"#EAB308",action:"Plan this week"},
           {label:"Safe",desc:"6+ days remaining",count:fth.green,color:T.green,action:"No action needed"}
         ].map(b=>{const tot=fth.expired+fth.red+fth.yellow+fth.green;return <div key={b.label} style={{marginBottom:10}}>
@@ -209,6 +211,7 @@ function HomePage({setPage}){
             <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:9,color:T.sub}}>{b.action}</span><span style={{fontSize:12,fontWeight:700,color:b.color}}>{b.count.toLocaleString()}</span></div>
           </div>
           <div style={{height:6,background:T.card2,borderRadius:3,overflow:"hidden",boxShadow:"inset 0 1px 2px rgba(0,0,0,.06)"}}><div style={{height:"100%",width:Math.round(b.count/tot*100)+"%",background:b.color,borderRadius:3}}/></div>
+          {b.link&&b.count>0&&<div onClick={b.onClick} style={{fontSize:9,fontWeight:700,color:b.color,cursor:"pointer",marginTop:3,textDecoration:"underline"}}>{b.link}</div>}
         </div>;})}
       </Card></div>
     </div>
@@ -228,7 +231,7 @@ function HomePage({setPage}){
     </div>
     <div style={{height:1,background:T.border+"40",margin:"6px 0 14px"}}/>
     {/* ACTION TABLE */}
-    <Card id="actionTable" urgency="action" style={{borderLeft:"4px solid "+T.blue}}>
+    <Card ref={actionRef} id="actionTable" urgency="action" style={{borderLeft:"4px solid "+T.blue}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}><div><span style={{fontSize:15,fontWeight:600}}>Containers Needing Action Today</span><span style={{fontSize:11,fontWeight:400,color:T.sub,marginLeft:8}}>{"Top 5 of "+fth.red+" critical — sorted by daily burn"}</span></div></div>
       <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
         <thead><tr style={{color:T.sub,fontSize:9,textAlign:"left",background:T.card2}}>{["Container","Carrier","Route","Stage","Category","Cost","$/Day","Risk"].map(h=><th key={h} style={{padding:"5px 6px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",textAlign:["Cost","$/Day","Risk"].includes(h)?"right":"left"}}>{h}{h==="Risk"&&<HoverTip text={"Higher risk = more days beyond free period + more missing milestones. Max 100."}/>}{h==="$/Day"&&<HoverTip text={"Daily burn rate: how much this container costs per day of inaction. Computed from tier-based cost projection."}/>}</th>)}</tr></thead>
