@@ -409,7 +409,12 @@ if(view==="exceeding"){
         const pastCount=Math.round(beyond*c.containers*0.6);
         return{name:c.name,withinFP:c.containers-pastCount,pastFP:pastCount};
       });
-      return <div style={{height:200}}><ResponsiveContainer width="100%" height={200}>
+      return <div>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:6}}>
+          {[{c:T.green,label:"Within Free Period"},{c:T.red,label:"Past Free Period"}].map(({c,label})=>
+            <div key={label} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:c,opacity:0.8}}/><span style={{fontSize:9,color:T.sub}}>{label}</span></div>)}
+        </div>
+        <div style={{height:200}}><ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{top:8,right:8,bottom:20,left:4}} barCategoryGap="30%">
           <CartesianGrid strokeDasharray="3 3" stroke={T.border+"50"} vertical={false}/>
           <XAxis dataKey="name" fontSize={8} stroke={T.dim} tick={{fontSize:8}}/>
@@ -418,11 +423,15 @@ if(view==="exceeding"){
           <Bar dataKey="withinFP" name="Within FP" stackId="a" fill={T.green} fillOpacity={0.7} radius={[0,0,0,0]}/>
           <Bar dataKey="pastFP"   name="Past FP"   stackId="a" fill={T.red}   fillOpacity={0.8} radius={[3,3,0,0]}/>
         </BarChart>
-      </ResponsiveContainer></div>;
+      </ResponsiveContainer></div></div>;
     }
     // cost view
     const data=carriers.map(c=>({name:c.name,cost:Math.round(c.estCost/1000)})).sort((a,b)=>b.cost-a.cost);
-    return <div style={{height:200}}><ResponsiveContainer width="100%" height={200}>
+    return <div>
+      <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:6}}>
+        <div style={{width:10,height:10,borderRadius:2,background:cat.color,opacity:0.8}}/><span style={{fontSize:9,color:T.sub}}>{"Est. D&D cost exposure — "+cat.label+" (sorted highest to lowest)"}</span>
+      </div>
+      <div style={{height:200}}><ResponsiveContainer width="100%" height={200}>
       <BarChart data={data} margin={{top:8,right:8,bottom:20,left:4}} barCategoryGap="30%">
         <CartesianGrid strokeDasharray="3 3" stroke={T.border+"50"} vertical={false}/>
         <XAxis dataKey="name" fontSize={8} stroke={T.dim} tick={{fontSize:8}}/>
@@ -430,7 +439,7 @@ if(view==="exceeding"){
         <Tooltip contentStyle={{fontSize:10,borderRadius:8}} labelStyle={{fontWeight:700}} formatter={v=>"$"+v+"k"}/>
         <Bar dataKey="cost" name="Est. Cost" fill={cat.color} fillOpacity={0.8} radius={[3,3,0,0]}/>
       </BarChart>
-    </ResponsiveContainer></div>;
+    </ResponsiveContainer></div></div>;
   };
 
   const viewLabels={scatter:"Origin vs Destination scatter — quadrant view per charge category. Bubbles sized by container volume, colored by carrier risk score.",exceeding:"Container count within vs past free period per carrier, by charge category.",cost:"Estimated D&D cost exposure by carrier (directional estimate, not billing data)."};
