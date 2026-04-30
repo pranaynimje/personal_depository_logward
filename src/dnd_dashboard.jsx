@@ -685,7 +685,7 @@ function OptimizerPage(){
           <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:c.c}}>{fmt(c.predicted)}</td>
         </tr>)}</tbody>
       </table>
-      {predDays===0?<div style={{background:T.amberBg,border:"1px solid "+T.amber+"40",borderRadius:8,padding:"8px 12px",marginTop:8,borderLeft:"3px solid "+T.amber}}><div style={{fontSize:11,color:T.amber,fontWeight:600}}>Select a future date to see cost projections. Today's view shows current baseline only.</div></div>:<Insight text={"If no containers are cleared by "+predDate+", your portfolio accumulates "+fmt(predCost.reduce((s,c)=>s+c.predicted,0))+" in avoidable charges across "+(allContainers.filter(c=>c.fpStatus!=="Green").length+Math.round(predDays*4.2))+" at-risk containers. Use the planner below to prioritize."}/>}
+      {predDays===0?<div style={{background:T.amberBg,border:"1px solid "+T.amber+"40",borderRadius:8,padding:"8px 12px",marginTop:8,borderLeft:"3px solid "+T.amber}}><div style={{fontSize:11,color:T.amber,fontWeight:600}}>Select a future date to see cost projections. Today's view shows current baseline only.</div></div>:<Insight text={"If no containers are cleared by "+predDate+", your portfolio accumulates "+fmt(allContainers.reduce((s,c)=>s+c.todayCost,0))+" in avoidable charges across "+allContainers.filter(c=>c.fpStatus!=="Green").length+" at-risk containers. Use the planner below to prioritize."}/>}
     </Card>
 
     {/* CHARGE BREAKDOWN */}
