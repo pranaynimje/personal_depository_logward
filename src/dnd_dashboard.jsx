@@ -151,7 +151,7 @@ function HomePage({setPage}){
             {sec.nodes.map((n,i)=><div key={i} style={{background:"#fff",border:"1px solid "+T.border+"80",borderRadius:12,padding:"12px 10px",textAlign:"center",position:"relative"}}>
               {n.missing>0&&(()=>{const TOTAL=2186;const reachRatio=n.actual/TOTAL;const isEarly=["Gate Out Empty","Gate In POL","Load POL"].includes(n.label);const isLate=["Gate Out POD","Empty Return"].includes(n.label);const tip=isLate?"Most containers have not yet reached this stage — expected for in-transit shipments.":(reachRatio>0.5?"⚠ "+n.missing.toLocaleString()+" containers reached this stage but date was not captured — possible tracking gap.":"Many containers have not yet reached this stage — check if upstream delays are holding shipments.");const badgeColor=isLate?T.sub:(reachRatio>0.5?T.amber:T.dim);return<div style={{position:"absolute",top:6,right:8,cursor:"help",fontSize:11,color:badgeColor,userSelect:"none"}} title={tip}>{(isLate?"○ ":"⚠ ")+n.missing.toLocaleString()}</div>;})()}
               <n.icon size={14} color={n.color} style={{marginBottom:2}}/><div style={{fontSize:11,fontWeight:700}}>{n.label}</div><div style={{fontSize:10,color:T.dim}}>{n.sub}</div>
-              <div style={{fontSize:9,color:T.sub,marginTop:4}}>Affected Containers</div>
+              <div style={{fontSize:9,color:T.sub,marginTop:4}}>Reached Milestone</div>
               <div style={{fontSize:16,fontWeight:700,margin:"2px 0",color:T.text}}>{n.actual.toLocaleString()}</div>
             </div>)}
           </div>
