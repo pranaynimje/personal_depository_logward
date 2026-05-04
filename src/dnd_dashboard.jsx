@@ -507,6 +507,29 @@ if(view==="exceeding"){
       <NavLink text="See port and lane performance trends → Historical" onClick={()=>setPage("history")}/>
     </Card>
 
+    {selCarrier&&view!=="lanes"&&(()=>{
+      const cd=carriers.find(c=>c.name===selCarrier);
+      if(!cd)return null;
+      const overO=cd.avgODet>5.1||cd.avgODem>3.1;
+      const overD=cd.avgDDet>6.0||cd.avgDDem>3.0;
+      const both=overO&&overD;
+      const color=both?T.red:overO||overD?T.amber:T.green;
+      const bg=both?T.redBg:overO||overD?T.amber+"15":T.green+"15";
+      const icon=both?"⚠":overO?"↑":overD?"↓":"✓";
+      const label=both?"Both sides over free period":overO?"Origin delays":overD?"Destination delays":"Within free period";
+      const msg=both
+        ?selCarrier+" exceeds free period on both origin and destination. Operational: Contact the freight forwarder or warehouse handling "+selCarrier+" shipments — late gate-in at origin and delayed returns at destination are the likely drivers. Procurement: At the next tender, negotiate extended free days on "+selCarrier+" lanes where dwell consistently exceeds threshold."
+        :overO
+        ?selCarrier+" shows origin-side delays. Operational: Contact your origin freight forwarder or factory for "+selCarrier+" shipments — gate-in timing is the likely driver. Destination performance is within free period, no action needed there."
+        :overD
+        ?selCarrier+" shows destination-side delays. Operational: Contact your customs broker or inland delivery partner for "+selCarrier+" shipments — terminal congestion or warehouse intake delays are the likely driver. Origin performance is within free period."
+        :selCarrier+" is performing within free period on both sides. No operational action needed. Flag as preferred carrier in your next tender review.";
+      return <div style={{background:bg,borderRadius:10,padding:"12px 16px",margin:"0 0 12px",borderLeft:"3px solid "+color}}>
+        <div style={{fontSize:11,fontWeight:700,color,marginBottom:4}}>{icon} {label} — {selCarrier}</div>
+        <div style={{fontSize:11,color:T.text,lineHeight:1.6}}>{msg}</div>
+      </div>;
+    })()}
+
     <Card style={{marginTop:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
         <div>
