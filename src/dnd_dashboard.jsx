@@ -105,14 +105,14 @@ function HomePage({setPage}){
       {/* Overdue */}
       <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.red,background:"#FFF5F5",display:"flex",flexDirection:"column",justifyContent:"center"}}>
         <div style={{fontSize:9,fontWeight:600,color:T.red,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Overdue</div>
-        <div style={{fontSize:26,fontWeight:800,color:T.red}}>{fth.expired.toLocaleString()}</div>
+        <div style={{fontSize:26,fontWeight:800,color:fth.expired>0?T.red:T.green}}>{fth.expired.toLocaleString()}</div>
         <div style={{fontSize:9,color:T.sub,marginTop:2}}>Free period expired</div>
         <div onClick={()=>actionRef.current?.scrollIntoView({behavior:"smooth"})} style={{fontSize:9,color:T.red,fontWeight:700,cursor:"pointer",marginTop:6,textDecoration:"underline"}}>See today's action list ↓</div>
       </Card>
       {/* At Risk */}
       <Card style={{padding:"16px 14px",borderTop:"3px solid "+T.amber,background:T.amberBg,display:"flex",flexDirection:"column",justifyContent:"center"}}>
         <div style={{fontSize:9,fontWeight:600,color:T.amber,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>At Risk</div>
-        <div style={{fontSize:26,fontWeight:800,color:T.amber}}>{fth.red}</div>
+        <div style={{fontSize:26,fontWeight:800,color:fth.red>0?T.amber:T.green}}>{fth.red}</div>
         <div style={{fontSize:9,color:T.sub,marginTop:2}}>Expiring within 48h</div>
         <div onClick={()=>setPage("optimizer")} style={{fontSize:9,color:T.amber,fontWeight:700,cursor:"pointer",marginTop:6,textDecoration:"underline"}}>Prioritise in Cost Optimizer →</div>
       </Card>
@@ -203,7 +203,7 @@ function HomePage({setPage}){
           </table>
         )}
         {breakdownToggle==="location"&&<div style={{fontSize:9,color:T.dim,marginTop:6,lineHeight:1.4}}>Combined D&D containers are billed under a single joint tariff. Detention and Demurrage rows reflect separately-billed contracts only — no double-counting.</div>}
-        <Insight text={(()=>{const cats=[{n:"Combined D&D",v:cm.dnd_origin.total},{n:"Detention",v:cm.detention_origin.total},{n:"Demurrage",v:cm.demurrage_origin.total},{n:"Storage",v:cm.storage_origin.total}];const top=cats.reduce((a,b)=>b.v>a.v?b:a);return top.n+" at origin ("+fmt(top.v)+") accounts for "+Math.round(top.v/BASE.grandTotal*100)+"% of total exposure. This is your largest cost bucket.";})()}/>
+        <Insight text={(()=>{const cats=[{n:"Combined D&D",v:cm.dnd_origin.total},{n:"Detention",v:cm.detention_origin.total},{n:"Demurrage",v:cm.demurrage_origin.total},{n:"Storage",v:cm.storage_origin.total}];const top=cats.reduce((a,b)=>b.v>a.v?b:a);return top.n+" at origin ("+fmt(top.v)+") accounts for "+Math.round(top.v/Math.max(1,BASE.grandTotal)*100)+"% of total exposure. This is your largest cost bucket.";})()}/>
       </Card>
       <div ref={fthRef}><Card>
         <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Free Time Health</div>
@@ -270,7 +270,7 @@ function CostPage({setPage}){
   return (<div style={{padding:"20px 28px",width:"100%",boxSizing:"border-box"}}>
     <SH title="Cost Overview" sub="Where exactly is the money going? Drill into category, side, and distribution."/>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
-      <ChartBox title="Origin vs Destination by Category" sub="Compare which category has the biggest origin-to-destination gap" h={220} insight={(()=>{const maxCat=COST_CATS.reduce((a,cat)=>{const t=cm[cat.oKey].total+cm[cat.dKey].total;return t>a.total?{name:cat.name,total:t,oTotal:cm[cat.oKey].total}:a;},{name:"",total:0,oTotal:0});return maxCat.name+" ("+fmt(maxCat.total)+") is the largest category at "+Math.round(maxCat.total/BASE.grandTotal*100)+"% of total. Origin accounts for "+fmt(maxCat.oTotal)+" ("+Math.round(maxCat.oTotal/Math.max(1,maxCat.total)*100)+"%).";})()} nav={<NavLink text="See which carriers drive this → Carrier Intel" onClick={()=>setPage("carriers")}/>}><ResponsiveContainer><BarChart data={barData} barCategoryGap="30%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><Tooltip content={<CTip/>}/><Bar dataKey="Origin" fill={T.amber} radius={[3,3,0,0]}/><Bar dataKey="Dest" fill={T.purple} radius={[3,3,0,0]}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></BarChart></ResponsiveContainer></ChartBox>
+      <ChartBox title="Origin vs Destination by Category" sub="Compare which category has the biggest origin-to-destination gap" h={220} insight={(()=>{const maxCat=COST_CATS.reduce((a,cat)=>{const t=cm[cat.oKey].total+cm[cat.dKey].total;return t>a.total?{name:cat.name,total:t,oTotal:cm[cat.oKey].total}:a;},{name:"",total:0,oTotal:0});return maxCat.name+" ("+fmt(maxCat.total)+") is the largest category at "+Math.round(maxCat.total/Math.max(1,BASE.grandTotal)*100)+"% of total. Origin accounts for "+fmt(maxCat.oTotal)+" ("+Math.round(maxCat.oTotal/Math.max(1,maxCat.total)*100)+"%).";})()} nav={<NavLink text="See which carriers drive this → Carrier Intel" onClick={()=>setPage("carriers")}/>}><ResponsiveContainer><BarChart data={barData} barCategoryGap="30%"><CartesianGrid strokeDasharray="3 3" stroke={T.border+"60"}/><XAxis dataKey="name" stroke={T.dim} fontSize={10}/><YAxis stroke={T.dim} fontSize={10} tickFormatter={v=>fmt(v)}/><Tooltip content={<CTip/>}/><Bar dataKey="Origin" fill={T.amber} radius={[3,3,0,0]}/><Bar dataKey="Dest" fill={T.purple} radius={[3,3,0,0]}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></BarChart></ResponsiveContainer></ChartBox>
       <ChartBox title="Cost Distribution" sub="Proportional share of each charge type in total cost" h={220}>{pieData.length>0?<ResponsiveContainer><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={85} dataKey="value" paddingAngle={2}>{pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip formatter={v=>fmt(v)}/><Legend formatter={v=><span style={{fontSize:9,color:T.sub}}>{v}</span>}/></PieChart></ResponsiveContainer>:<div style={{height:220,display:"flex",alignItems:"center",justifyContent:"center",color:T.dim,fontSize:11}}>No cost data available.</div>}</ChartBox>
     </div>
     <Card>
@@ -664,7 +664,7 @@ function OptimizerPage(){
     CDATA.topRisk.forEach(c=>{
       const key=c.cat in CAT_META?c.cat:"Combined D&D";
       if(!grouped[key])grouped[key]={total:0,count:0,totalDaily:0};
-      const daily=Math.round((c.cost3d-c.cost)/3);
+      const daily=Math.max(0,Math.round((c.cost3d-c.cost)/3));
       const todayCost=daily*Math.max(1,predDays);
       grouped[key].total+=todayCost;
       grouped[key].count+=1;
@@ -677,7 +677,7 @@ function OptimizerPage(){
   },[predDays]);
 
   const allContainers=useMemo(()=>CDATA.topRisk.map(c=>{
-    const d3=c.cost3d-c.cost;const d7=c.cost7d-c.cost;const fp=5.1;const daily=Math.round(d3/3);
+    const d3=c.cost3d-c.cost;const d7=c.cost7d-c.cost;const fp=5.1;const daily=Math.max(0,Math.round(d3/3));
     const todayCost=daily*Math.max(1,predDays);
     const fpStatus=c.oDet>fp?"Expired":c.oDet>fp-0.5?"Expiring Today":c.oDet>fp-2?"Expiring 48h":"Green";
     const side=["Gate Out POD","Discharge POD","Empty Return"].includes(c.stage)?"Destination":"Origin";
@@ -722,7 +722,7 @@ function OptimizerPage(){
   const chargeData=useMemo(()=>{
     const acc={Origin:{Detention:0,Demurrage:0,Storage:0,"Combined D&D":0},Dest:{Detention:0,Demurrage:0,Storage:0,"Combined D&D":0}};
     CDATA.topRisk.forEach(c=>{
-      const daily=Math.round((c.cost3d-c.cost)/3);
+      const daily=Math.max(0,Math.round((c.cost3d-c.cost)/3));
       const val=daily*Math.max(1,predDays);
       const sideKey=["Gate Out POD","Discharge POD","Empty Return"].includes(c.stage)?"Dest":"Origin";
       const catKey=c.cat in acc.Origin?c.cat:"Combined D&D";
@@ -902,7 +902,7 @@ function OptimizerPage(){
 
     <Card style={{marginTop:14}}>
       <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Actionable Observations</div>
-      {(()=>{const detFP=BASE.costMatrix.detention_origin.avgFP;const detAvg=BASE.stageDays.origin_detention.avg;const detUtil=Math.round(detAvg/detFP*100);const combPct=Math.round(BASE.costMatrix.dnd_origin.total/BASE.grandTotal*100);const sepT=BASE.costMatrix.detention_origin.total+BASE.costMatrix.demurrage_origin.total;const combPrem=sepT>0?Math.round((BASE.costMatrix.dnd_origin.total-sepT)/sepT*100):0;const top3=allContainers.slice(0,3);const top3burn=top3.reduce((s,c)=>s+c.daily,0);const top3sav=top3.reduce((s,c)=>s+c.sav3d,0);const maxODet=Math.max(...top3.map(c=>c.oDet));return[{c:T.green,t:"Origin detention at "+detUtil+"% free-time utilization",b:"Avg "+detAvg+"d vs "+detFP+"d free. "+(detUtil>90?"Any delay triggers charges immediately.":"Some buffer remains but monitor closely."),a:"Coordinate with depot to ensure gate-in within "+Math.floor(detFP)+" days of pickup."},
+      {(()=>{const detFP=BASE.costMatrix.detention_origin.avgFP;const detAvg=BASE.stageDays.origin_detention.avg;const detUtil=Math.round(detAvg/detFP*100);const combPct=Math.round(BASE.costMatrix.dnd_origin.total/BASE.grandTotal*100);const sepT=BASE.costMatrix.detention_origin.total+BASE.costMatrix.demurrage_origin.total;const combPrem=sepT>0?Math.round((BASE.costMatrix.dnd_origin.total-sepT)/sepT*100):0;const top3=allContainers.slice(0,3);const top3burn=top3.reduce((s,c)=>s+c.daily,0);const top3sav=top3.reduce((s,c)=>s+c.sav3d,0);const maxODet=top3.length>0?Math.max(...top3.map(c=>c.oDet)):0;return[{c:T.green,t:"Origin detention at "+detUtil+"% free-time utilization",b:"Avg "+detAvg+"d vs "+detFP+"d free. "+(detUtil>90?"Any delay triggers charges immediately.":"Some buffer remains but monitor closely."),a:"Coordinate with depot to ensure gate-in within "+Math.floor(detFP)+" days of pickup."},
         {c:T.amber,t:"Combined D&D origin = "+combPct+"% of total cost",b:"Combined rate is "+combPrem+"% more expensive than separate on origin lanes.",a:"Evaluate switching to separate rates in Surcharges tab."},
         {c:T.red,t:"Top 3 containers burn "+fmt(top3burn)+"/day combined",b:"These have been in origin detention for "+Math.round(maxODet)+"+ days, deep in higher tier rates.",a:"Clearing within 3 days avoids "+fmt(top3sav)+" in additional charges."}]})().map((ins,i)=><div key={i} style={{background:T.card2,borderRadius:8,padding:10,marginBottom:6,borderLeft:"3px solid "+ins.c}}><div style={{fontSize:11,fontWeight:600,marginBottom:2}}>{ins.t}</div><div style={{fontSize:11,color:T.sub,lineHeight:1.4}}>{"Because: "+ins.b}</div><div style={{fontSize:11,color:ins.c,fontWeight:600}}>{"Action: "+ins.a}</div></div>)}
     </Card>
@@ -944,7 +944,7 @@ function HistoryPage({setPage,navToSurcharges}){
       <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Stage-Wise Cost Contribution</div><div style={{fontSize:11,color:T.sub,marginBottom:10}}>Which journey stages drive cost? Focus on "Over" rows.</div>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
         <thead><tr style={{background:T.card2}}>{["Stage","Type","Avg Dwell","Free Period","Breach","Cost","%","Status"].map((h,hi)=><th key={h} style={{padding:"8px 10px",textAlign:["Cost","%"].includes(h)?"right":"left",color:T.dim,fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",borderRadius:hi===0?"5px 0 0 5px":hi===7?"0 5px 5px 0":"0"}}>{h}{h==="Status"&&<HoverTip text={"Over: breach > 1d beyond free. Near: 0–1d. OK: within free period."}/>}{h==="Breach"&&<HoverTip text={"Avg dwell minus free period. Positive = days in paid tier."}/>}</th>)}</tr></thead>
-        <tbody>{stageData.map((s,i)=>{const pct=Math.round(s.cost/totalStageCost*100);const v=s.avgDays===0?{t:"No Data",c:T.dim}:s.breach>1?{t:"Over",c:T.red}:s.breach>0?{t:"Near",c:T.amber}:{t:"OK",c:T.green};return <tr key={i} style={{background:i%2===0?"#fff":T.card2+"60",borderBottom:"1px solid "+T.border+"30"}}><td style={{padding:"8px 10px",fontWeight:600}}>{s.stage}</td><td style={{padding:"8px 10px"}}><Badge color={s.color}>{s.costType}</Badge></td><td style={{padding:"8px 10px",fontWeight:600}}>{s.avgDays.toFixed(1)}d</td><td style={{padding:"8px 10px",color:T.green,fontWeight:600}}>{s.freeTime}d</td><td style={{padding:"8px 10px",color:s.breach>0?T.red:T.green,fontWeight:700}}>{s.breach.toFixed(1)}d</td><td style={{padding:"8px 10px",color:s.color,fontWeight:600,textAlign:"right"}}>{fmt(s.cost)}</td><td style={{padding:"8px 10px",textAlign:"right"}}>{pct}%</td><td style={{padding:"8px 10px"}}><SolidBadge color={v.c}>{v.t}</SolidBadge></td></tr>;})}</tbody>
+        <tbody>{stageData.map((s,i)=>{const pct=Math.round(s.cost/Math.max(1,totalStageCost)*100);const v=s.avgDays===0?{t:"No Data",c:T.dim}:s.breach>1?{t:"Over",c:T.red}:s.breach>0?{t:"Near",c:T.amber}:{t:"OK",c:T.green};return <tr key={i} style={{background:i%2===0?"#fff":T.card2+"60",borderBottom:"1px solid "+T.border+"30"}}><td style={{padding:"8px 10px",fontWeight:600}}>{s.stage}</td><td style={{padding:"8px 10px"}}><Badge color={s.color}>{s.costType}</Badge></td><td style={{padding:"8px 10px",fontWeight:600}}>{s.avgDays.toFixed(1)}d</td><td style={{padding:"8px 10px",color:T.green,fontWeight:600}}>{s.freeTime}d</td><td style={{padding:"8px 10px",color:s.breach>0?T.red:T.green,fontWeight:700}}>{s.breach.toFixed(1)}d</td><td style={{padding:"8px 10px",color:s.color,fontWeight:600,textAlign:"right"}}>{fmt(s.cost)}</td><td style={{padding:"8px 10px",textAlign:"right"}}>{pct}%</td><td style={{padding:"8px 10px"}}><SolidBadge color={v.c}>{v.t}</SolidBadge></td></tr>;})}</tbody>
       </table>
     </Card>
 
