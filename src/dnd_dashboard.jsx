@@ -307,7 +307,7 @@ const CARRIER_VIEWS=[
   {id:"scatter",   label:"Avg Dwell Days"},
   {id:"exceeding", label:"Containers Exceeding Free Days"},
   {id:"cost",      label:"Cost Exposure"},
-  {id:"lanes",     label:"Trade Lanes"},
+  {id:"lanes",     label:"Trade Lanes (Development in Progress)"},
 ];
 const SCATTER_CATS=[
   {id:"detention",label:"Detention",  xKey:"avgODet",yKey:"avgDDet",fpX:5.1,fpY:6.0,xLabel:"Origin Det (days)",yLabel:"Dest Det (days)",color:T.amber},
@@ -481,6 +481,7 @@ if(view==="exceeding"){
         const oStat=v=>v>5.1?{t:"Over FP",c:T.red}:v>3.5?{t:"Near FP",c:T.amber}:{t:"OK",c:T.green};
         const dStat=v=>v>6.0?{t:"Over FP",c:T.red}:v>4.0?{t:"Near FP",c:T.amber}:{t:"OK",c:T.green};
         return <div>
+          <div style={{background:T.amberBg,border:"1px solid "+T.amber+"40",borderRadius:8,padding:"8px 14px",marginBottom:12,borderLeft:"3px solid "+T.amber}}><div style={{fontSize:11,fontWeight:700,color:T.amber}}>🚧 Development in Progress — this view is under active development. Data shown is indicative only.</div></div>
           {selCarrier&&<div style={{fontSize:9,color:T.sub,marginBottom:8,fontStyle:"italic"}}>Showing {lanes.length} lane{lanes.length!==1?"s":""} operated by {selCarrier}. Click scorecard row below to filter.</div>}
           {!selCarrier&&<div style={{fontSize:9,color:T.sub,marginBottom:8}}>All trade lanes — click a carrier in the scorecard to filter by carrier.</div>}
           <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
