@@ -1043,7 +1043,7 @@ function SurchargePage({setPage,selectedLane,clearLane}){
               {[{t:"O. Detention",v:activeLane.avgODet.toFixed(1)+"d",fp:"5.1d",over:oDetOver,c:T.amber},{t:"O. Demurrage",v:activeLane.avgODem.toFixed(1)+"d",fp:"3.1d",over:oDemOver,c:T.purple},{t:"Combined FP",v:combinedFP+"d",fp:"vs "+combinedTotal.toFixed(1)+"d total",over:!combinedSaves,c:T.red}].map((x,i)=><div key={i} style={{background:T.card2,borderRadius:8,padding:"8px 10px",borderTop:"2px solid "+(x.over?T.red:T.green)}}>
                 <div style={{fontSize:9,color:T.sub}}>{x.t}</div>
                 <div style={{fontSize:14,fontWeight:700,color:x.over?T.red:T.green}}>{x.v}</div>
-                <div style={{fontSize:9,color:T.dim}}>{x.fp}</div>
+                <div style={{fontSize:9,color:T.dim}}>Free period: {x.fp}</div>
               </div>)}
             </div>
             <div style={{padding:"8px 12px",background:combinedSaves?T.greenBg:T.redBg,borderRadius:8,borderLeft:"3px solid "+(combinedSaves?T.green:T.red)}}>
