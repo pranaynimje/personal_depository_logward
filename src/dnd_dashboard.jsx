@@ -995,13 +995,11 @@ function SurchargePage({setPage,selectedLane,clearLane}){
       const portAvgDDet=+(BASE.topLanes.reduce((s,l)=>s+l.avgDDet*l.containers,0)/BASE.topLanes.reduce((s,l)=>s+l.containers,0)).toFixed(1);
       // Rate structure: if both O.Det > det FP AND O.Dem > dem FP → combined free period (9.9d) covers both → combined may be better
       const oDetOver=activeLane.avgODet>5.1;const oDemOver=activeLane.avgODem>3.1;
-      const effectiveDet=assumedDays!==null?Math.min(assumedDays,activeLane.avgODet+activeLane.avgODem)*activeLane.avgODet/(activeLane.avgODet+activeLane.avgODem||1):activeLane.avgODet;
-      const effectiveDem=assumedDays!==null?Math.min(assumedDays,activeLane.avgODet+activeLane.avgODem)*activeLane.avgODem/(activeLane.avgODet+activeLane.avgODem||1):activeLane.avgODem;
-      const combinedTotal=assumedDays!==null?assumedDays:activeLane.avgODet+activeLane.avgODem;
-      const combinedFP=9.9;
+      const combinedFP=BASE.costMatrix.dnd_origin.avgFP;
+      const combinedTotal=assumedDays!==null?assumedDays:activeLane.avgOComb;
       const combinedSaves=combinedTotal<combinedFP;
       const usingAssumed=assumedDays!==null;
-      const rateRec=combinedSaves?"Combined D&D rate is better"+(usingAssumed?" at "+assumedDays+"d assumed dwell":" for this lane")+" — combined free period ("+combinedFP+"d) covers the total dwell of "+combinedTotal.toFixed(1)+"d.":"Separate rates are better"+(usingAssumed?" at "+assumedDays+"d assumed dwell":" for this lane")+" — combined free period ("+combinedFP+"d) does not cover total dwell ("+combinedTotal.toFixed(1)+"d). Pay for each independently to isolate exposure.";
+      const rateRec=combinedSaves?"Combined Det+Dem rate covers "+(usingAssumed?assumedDays+"d assumed":activeLane.avgOComb.toFixed(1)+"d avg")+" within the "+combinedFP+"d combined free period. Recommend Combined Det+Dem rate for this lane.":"At "+(usingAssumed?assumedDays+"d assumed":activeLane.avgOComb.toFixed(1)+"d avg")+", combined free period ("+combinedFP+"d) is exceeded. Use separate rates to isolate exposure — only pay for the category that breaches.";
       // Free period asks specific to this lane
       const fpAsks=[
         {label:"Origin Detention",laneAvg:activeLane.avgODet,fp:BASE.costMatrix.detention_origin.avgFP,color:T.amber},
@@ -1050,12 +1048,12 @@ function SurchargePage({setPage,selectedLane,clearLane}){
               {assumedDays!==null&&<button onClick={()=>setAssumedDays(null)} style={{padding:"4px 8px",borderRadius:5,border:"1px solid "+T.border,background:"#fff",color:T.sub,fontSize:9,cursor:"pointer"}}>Reset to Actual</button>}
               <div style={{fontSize:9,color:T.dim}}>Enter a fixed dwell day assumption to compare rate structures independently of this lane's history.</div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
-              {[{t:"O. Detention",v:(assumedDays!==null?effectiveDet:activeLane.avgODet).toFixed(1)+"d",fp:"5.1d",over:(assumedDays!==null?effectiveDet:activeLane.avgODet)>5.1,c:T.amber},{t:"O. Demurrage",v:(assumedDays!==null?effectiveDem:activeLane.avgODem).toFixed(1)+"d",fp:"3.1d",over:(assumedDays!==null?effectiveDem:activeLane.avgODem)>3.1,c:T.purple},{t:"Combined FP",v:combinedFP+"d",fp:"vs "+combinedTotal.toFixed(1)+"d total",over:!combinedSaves,c:T.red}].map((x,i)=><div key={i} style={{background:T.card2,borderRadius:8,padding:"8px 10px",borderTop:"2px solid "+(x.over?T.red:T.green)}}>
-                <div style={{fontSize:9,color:T.sub}}>{x.t}</div>
-                <div style={{fontSize:14,fontWeight:700,color:x.over?T.red:T.green}}>{x.v}</div>
-                <div style={{fontSize:9,color:T.dim}}>Free period: {x.fp}</div>
-              </div>)}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
+              {[{t:"Detention",fp:BASE.costMatrix.detention_origin.avgFP,avg:activeLane.avgODet,c:T.amber},{t:"Demurrage",fp:BASE.costMatrix.demurrage_origin.avgFP,avg:activeLane.avgODem,c:T.purple},{t:"Storage",fp:BASE.costMatrix.storage_origin.avgFP,avg:activeLane.avgOSto||0,c:T.green},{t:"Comb Det+Dem",fp:combinedFP,avg:activeLane.avgOComb,c:T.red}].map((x,i)=>{const withinFP=assumedDays!==null?assumedDays<x.fp:null;const borderColor=assumedDays!==null?(withinFP?T.green:T.red):x.c;return <div key={i} style={{background:T.card2,borderRadius:8,padding:"8px 10px",borderTop:"2px solid "+borderColor}}>
+                <div style={{fontSize:9,color:T.sub,marginBottom:4}}>{x.t}</div>
+                <div style={{fontSize:14,fontWeight:700}}>{x.fp+"d"}<span style={{fontSize:9,color:T.sub,fontWeight:400}}>{" free"}</span></div>
+                {assumedDays!==null?<div style={{marginTop:4,fontSize:10,fontWeight:700,color:withinFP?T.green:T.red}}>{withinFP?"✓ "+(x.fp-assumedDays).toFixed(1)+"d remaining":"✗ "+(assumedDays-x.fp).toFixed(1)+"d over FP"}</div>:<div style={{fontSize:11,color:T.dim,marginTop:2}}>{x.avg.toFixed(1)+"d avg"}</div>}
+              </div>;})}
             </div>
             <div style={{padding:"8px 12px",background:combinedSaves?T.greenBg:T.redBg,borderRadius:8,borderLeft:"3px solid "+(combinedSaves?T.green:T.red)}}>
               <div style={{fontSize:11,fontWeight:600,color:combinedSaves?T.green:T.red,marginBottom:3}}>{combinedSaves?"✓ Recommend: Combined D&D":"✗ Recommend: Separate Rates"}</div>
