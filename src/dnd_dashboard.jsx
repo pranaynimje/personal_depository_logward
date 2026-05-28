@@ -282,7 +282,7 @@ function CostPage({setPage}){
             {name:"Detention",                  oKey:"detention_origin",                  dKey:"detention_destination",                  color:T.amber},
             {name:"Demurrage",                  oKey:"demurrage_origin",                  dKey:"demurrage_destination",                  color:T.purple},
             {name:"Storage",                    oKey:"storage_origin",                    dKey:"storage_destination",                    color:T.green},
-            {name:"Combined D&D",               oKey:"dnd_origin",                        dKey:"dnd_destination",                        color:T.red},
+            {name:"Combined D&D",                 oKey:"dnd_origin",                        dKey:"dnd_destination",                        color:T.red},
             {name:"Demurrage + Storage",        oKey:"demurrageStorage_origin",           dKey:"demurrageStorage_destination",           color:T.purple},
             {name:"Detention + Demurrage",      oKey:"detentionDemurrage_origin",         dKey:"detentionDemurrage_destination",         color:T.amber},
             {name:"Det. + Dem. + Storage",      oKey:"detentionDemurrageStorage_origin",  dKey:"detentionDemurrageStorage_destination",  color:T.red},
@@ -307,7 +307,6 @@ const CARRIER_VIEWS=[
   {id:"scatter",   label:"Avg Dwell Days"},
   {id:"exceeding", label:"Containers Exceeding Free Days"},
   {id:"cost",      label:"Cost Exposure"},
-  {id:"lanes",     label:"Trade Lanes (Development in Progress)"},
 ];
 const SCATTER_CATS=[
   {id:"detention",label:"Detention",  xKey:"avgODet",yKey:"avgDDet",fpX:5.1,fpY:6.0,xLabel:"Origin Det (days)",yLabel:"Dest Det (days)",color:T.amber},
@@ -321,17 +320,20 @@ function CarrierPage({setPage}){
   const[view,setView]=useState("scatter");
   const carriers=useMemo(()=>Object.entries(BASE.carriers).filter(([,v])=>v.containers>=5).map(([n,d])=>{
     const beyondFP=+(d.avgODet-5.1).toFixed(1);
-    const pastFPCount=Math.round(Math.max(0,beyondFP)*d.containers*0.6);
+    const oSto=d.avgOSto||0;const dSto=d.avgDSto||0;
+    const oC=d.avgOComb||0;const dC=d.avgDComb||0;
+    const tO=d.avgODet+d.avgODem;const tD=d.avgDDem+d.avgDDet;
+    // pastFPCount covers all 4 origin+destination categories, not just origin detention
+    const totalBeyond=Math.max(0,d.avgODet-5.1)+Math.max(0,d.avgODem-3.1)+Math.max(0,oSto-3.1)+Math.max(0,oC-9.9)+Math.max(0,d.avgDDet-6.0)+Math.max(0,d.avgDDem-3.0)+Math.max(0,dSto-3.0)+Math.max(0,dC-12.0);
+    const pastFPCount=Math.round(totalBeyond*d.containers*0.3);
     const pastFPPct=+(pastFPCount/d.containers*100).toFixed(1);
-    const estCost=Math.max(0,Math.round(pastFPCount*(beyondFP>0?beyondFP*120:0)+d.containers*d.avgDDem*40+d.containers*d.avgDDet*80));
+    const avgDaysBeyond=d.containers>0?+(totalBeyond/8).toFixed(1):0;
+    const estCost=Math.max(0,Math.round(pastFPCount*(totalBeyond>0?totalBeyond*60:0)+d.containers*d.avgDDem*40+d.containers*d.avgDDet*80));
     const tierIn=Math.round(d.containers*(1-(pastFPPct/100)));
     const tier1=Math.round(d.containers*Math.min(pastFPPct/100,0.3));
     const tier2=Math.round(d.containers*Math.max(0,Math.min(pastFPPct/100-0.3,0.25)));
     const tier3=Math.round(d.containers*Math.max(0,pastFPPct/100-0.55));
     const beyondFPDest=+(d.avgDDet-6.0).toFixed(1);
-    const oSto=d.avgOSto||0;const dSto=d.avgDSto||0;
-    const oC=d.avgOComb||0;const dC=d.avgDComb||0;
-    const tO=d.avgODet+d.avgODem;const tD=d.avgDDem+d.avgDDet;
     const risk=Math.min(100,Math.round(
       Math.max(0,d.avgODet-5.1)*15+
       Math.max(0,d.avgODem-3.1)*10+
@@ -342,8 +344,9 @@ function CarrierPage({setPage}){
       Math.max(0,dSto-3.0)*5+
       Math.max(0,dC-12.0)*8
     ));
+    const dailyBurn=Math.max(0,Math.round(pastFPCount*80));
     return{name:n,...d,avgOSto:oSto,avgDSto:dSto,avgOComb:oC,avgDComb:dC,
-      totalO:tO,totalD:tD,beyondFP,beyondFPDest,pastFPCount,pastFPPct,estCost,tierIn,tier1,tier2,tier3,risk};
+      totalO:tO,totalD:tD,beyondFP,beyondFPDest,pastFPCount,pastFPPct,avgDaysBeyond,estCost,dailyBurn,tierIn,tier1,tier2,tier3,risk};
   }).sort((a,b)=>b.totalO-a.totalO),[]);
 
   const selStyle={border:"1px solid "+T.border,borderRadius:8,padding:"6px 12px",fontSize:11,color:T.text,background:"#fff",cursor:"pointer",outline:"none",fontWeight:600};
@@ -537,33 +540,20 @@ if(view==="exceeding"){
           <div style={{fontSize:14,fontWeight:600}}>Carrier Scorecard <span style={{fontSize:10,fontWeight:400,color:T.blue}}>— click any row to see containers</span></div>
           <div style={{fontSize:10,color:T.sub,marginTop:2}}>Avg Score = portfolio average dwell vs free period. <span style={{color:T.amber,fontWeight:600}}>Red cell = avg dwell exceeds free period.</span> Sorted by Avg Score.</div>
         </div>
-        <DlBtn onClick={()=>dlCSV("carrier_scorecard_"+new Date().toISOString().slice(0,10),["Carrier","Containers","O.Det avg(d)","O.Dem avg(d)","O.Sto avg(d)","O.Comb avg(d)","D.Det avg(d)","D.Dem avg(d)","D.Sto avg(d)","D.Comb avg(d)","Avg Score"],[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>[c.name,c.containers,c.avgODet,c.avgODem,c.avgOSto,c.avgOComb,c.avgDDet,c.avgDDem,c.avgDSto,c.avgDComb,c.risk]))}/>
+        <DlBtn onClick={()=>dlCSV("carrier_scorecard_"+new Date().toISOString().slice(0,10),["Carrier","Containers","Containers Over FP (est)","Avg Days Beyond FP","Est Daily Burn","Total Exposure (est)","Score"],[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>[c.name,c.containers,c.pastFPCount,c.avgDaysBeyond>0?"+"+c.avgDaysBeyond+"d":"Within FP",c.dailyBurn,c.estCost,c.risk>70?"High":c.risk>40?"Medium":"Low"]))}/>
       </div>
       {(()=>{
-        const fpMap={"avgODet":5.1,"avgODem":3.1,"avgOSto":3.1,"avgOComb":9.9,"avgDDet":6.0,"avgDDem":3.0,"avgDSto":3.0,"avgDComb":12.0};
-        const cell=(val,key)=>({fontWeight:600,color:val>fpMap[key]?T.red:T.green,background:val>fpMap[key]?"#FFF5F5":"transparent"});
         const th=(label,right,tip)=><th style={{padding:"6px 7px",fontWeight:600,fontSize:9,textTransform:"uppercase",letterSpacing:"0.4px",color:T.dim,background:T.card2,textAlign:right?"right":"left",whiteSpace:"nowrap"}}>{label}{tip&&<HoverTip text={tip}/>}</th>;
         return <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px",fontSize:10}}>
-          <thead>
-            <tr>
-              <th colSpan={2} style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.sub,background:T.card2,textAlign:"left"}}></th>
-              <th colSpan={4} style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.amber,background:"#FFF8EE",textAlign:"center",borderRadius:"6px 6px 0 0"}}>— ORIGIN —</th>
-              <th colSpan={4} style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.purple,background:T.purpleBg,textAlign:"center",borderRadius:"6px 6px 0 0"}}>— DESTINATION —</th>
-              <th style={{padding:"4px 7px",fontSize:8,fontWeight:700,color:T.text,background:T.card2,textAlign:"right"}}></th>
-            </tr>
-            <tr>
-              {th("Carrier")} {th("Vol",true)}
-              {th("Det",false,"Avg detention dwell at origin. Free period = 5.1d")}
-              {th("Dem",false,"Avg demurrage dwell at origin. Free period = 3.1d")}
-              {th("Sto",false,"Avg storage dwell at origin. Free period = 3.1d")}
-              {th("Comb",false,"Avg combined D&D dwell at origin. Free period = 9.9d")}
-              {th("Det",false,"Avg detention dwell at destination. Free period = 6.0d")}
-              {th("Dem",false,"Avg demurrage dwell at destination. Free period = 3.0d")}
-              {th("Sto",false,"Avg storage dwell at destination. Free period = 3.0d")}
-              {th("Comb",false,"Avg combined D&D dwell at destination. Free period = 12.0d")}
-              {th("Avg Score",true,"Based on how far each carrier's average dwell exceeds the free period across all categories. Score 0 = all averages within free period. Does NOT reflect individual container outliers — click the row to see those.")}
-            </tr>
-          </thead>
+          <thead><tr>
+            {th("Carrier")}
+            {th("Vol",true,"Total containers for this carrier")}
+            {th("Containers Over FP",true,"Estimated containers exceeding free period across all categories (Det, Dem, Sto, Comb — origin and destination)")}
+            {th("Avg Days Beyond FP",true,"Average excess days beyond free period across all 8 category+side combinations")}
+            {th("Est. Daily Burn",true,"Directional estimate — daily D&D cost accumulating across all over-FP containers. Not billing data.")}
+            {th("Total Exposure (est.)",true,"Directional estimate of total D&D cost exposure. Not billing data.")}
+            {th("Score",true,"Risk score based on how far avg dwell exceeds FP across all categories. Click row to see container detail.")}
+          </tr></thead>
           <tbody>{[...carriers].sort((a,b)=>b.risk-a.risk).map(c=>{
             const sel=selCarrier===c.name;
             const rc=c.risk>70?T.red:c.risk>40?T.amber:T.green;
@@ -575,20 +565,16 @@ if(view==="exceeding"){
                 {sel&&<ChevronDown size={10} color={T.blue} style={{marginLeft:4}}/>}
               </td>
               <td style={{padding:"6px 7px",textAlign:"right",color:T.sub}}>{c.containers}</td>
-              <td style={{padding:"6px 7px",...cell(c.avgODet,"avgODet")}}>{c.avgODet.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgODem,"avgODem")}}>{c.avgODem.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgOSto,"avgOSto")}}>{c.avgOSto.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgOComb,"avgOComb")}}>{c.avgOComb.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgDDet,"avgDDet")}}>{c.avgDDet.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgDDem,"avgDDem")}}>{c.avgDDem.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgDSto,"avgDSto")}}>{c.avgDSto.toFixed(1)}d</td>
-              <td style={{padding:"6px 7px",...cell(c.avgDComb,"avgDComb")}}>{c.avgDComb.toFixed(1)}d</td>
+              <td style={{padding:"6px 7px",textAlign:"right",fontWeight:600,color:c.pastFPCount>0?T.red:T.green}}>{c.pastFPCount}</td>
+              <td style={{padding:"6px 7px",textAlign:"right",fontWeight:600,color:c.avgDaysBeyond>0?T.red:T.green}}>{c.avgDaysBeyond>0?"+"+c.avgDaysBeyond+"d":"Within FP"}</td>
+              <td style={{padding:"6px 7px",textAlign:"right",fontWeight:600,color:c.dailyBurn>0?T.red:T.sub}}>{c.dailyBurn>0?fmt(c.dailyBurn)+"/d":"—"}</td>
+              <td style={{padding:"6px 7px",textAlign:"right",fontWeight:600}}>{fmt(c.estCost)}</td>
               <td style={{padding:"6px 7px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={rc}>{c.risk>70?"High":c.risk>40?"Medium":"Low"}</SolidBadge></td>
             </tr>;
           })}</tbody>
         </table>;
       })()}
-      <div style={{fontSize:9,color:T.dim,marginTop:6}}>FP thresholds: Origin Det 5.1d · Dem 3.1d · Sto 3.1d · Comb 9.9d &nbsp;|&nbsp; Dest Det 6.0d · Dem 3.0d · Sto 3.0d · Comb 12.0d. Carrier scores are for evaluation only.</div>
+      <div style={{fontSize:9,color:T.dim,marginTop:6}}>Carrier scores are for evaluation only. Business relationships and other factors can also influence decisions.</div>
     </Card>
 
     {selCarrier&&(()=>{const rows=CDATA.topRisk.filter(c=>c.ca===selCarrier);const cd=BASE.carriers[selCarrier];const risk=cd?Math.min(100,Math.round(Math.max(0,cd.avgODet-5.1)*15+Math.max(0,cd.avgODem-3.1)*10+Math.max(0,cd.avgOSto-3.1)*6+Math.max(0,cd.avgOComb-9.9)*10+Math.max(0,cd.avgDDet-6.0)*12+Math.max(0,cd.avgDDem-3.0)*8+Math.max(0,cd.avgDSto-3.0)*5+Math.max(0,cd.avgDComb-12.0)*8)):0;
@@ -619,21 +605,28 @@ if(view==="exceeding"){
         ):(
           <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",fontSize:10}}>
             <thead><tr style={{color:T.dim,fontSize:9,background:T.card2}}>
-              {["Container","Route","Stage","Category","Current Cost","O.Det (this container)","Container Risk"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Current Cost","Container Risk"].includes(h)?"right":"left",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px"}}>
+              {["Container","Lane","Category","Stage","Days Beyond FP","Daily Burn","Total Cost","Status"].map(h=><th key={h} style={{padding:"5px 6px",textAlign:["Days Beyond FP","Daily Burn","Total Cost"].includes(h)?"right":"left",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px"}}>
                 {h}
-                {h==="Container Risk"&&<HoverTip text="Individual container score — how far this specific container's dwell exceeds free period. Can be high even when carrier avg score is low."/>}
-                {h==="O.Det (this container)"&&<HoverTip text="Origin detention dwell for this specific container. Compare to carrier avg in scorecard above."/>}
+                {h==="Days Beyond FP"&&<HoverTip text="How many days this container has exceeded its free period."/>}
+                {h==="Daily Burn"&&<HoverTip text="Estimated D&D cost accumulating per day for this container."/>}
+                {h==="Status"&&<HoverTip text="Individual container risk — can be high even when carrier avg score is low."/>}
               </th>)}
             </tr></thead>
-            <tbody>{rows.map((c,i)=><tr key={i} style={{background:T.card2}}>
-              <td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td>
-              <td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td>
-              <td style={{padding:"5px 6px",fontSize:9,color:T.sub}}>{c.stage}</td>
-              <td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
-              <td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td>
-              <td style={{padding:"5px 6px",color:c.oDet>5.1?T.red:T.green,fontWeight:700,textAlign:"center"}}>{c.oDet}d <span style={{fontSize:8,color:T.sub,fontWeight:400}}>(avg: {cd?.avgODet.toFixed(1)}d)</span></td>
-              <td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:c.risk>=50?T.amber:T.green}>{c.risk>=75?"High":c.risk>=50?"Medium":"Low"}</SolidBadge></td>
-            </tr>)}
+            <tbody>{rows.map((c,i)=>{
+              const fpThreshold=c.cat==="Detention"?5.1:c.cat==="Demurrage"?3.1:c.cat==="Storage"?3.1:9.9;
+              const daysBeyond=Math.max(0,+(c.oDet-fpThreshold).toFixed(1));
+              const daily=Math.max(0,Math.round((c.cost3d-c.cost)/3));
+              return <tr key={i} style={{background:T.card2}}>
+                <td style={{padding:"5px 6px",borderRadius:"6px 0 0 6px",fontFamily:"monospace",fontSize:10,fontWeight:600}}>{c.cn}</td>
+                <td style={{padding:"5px 6px",color:T.sub,fontSize:9}}>{c.po+"→"+c.pd}</td>
+                <td style={{padding:"5px 6px"}}><Badge color={catColor(c.cat)}>{c.cat}</Badge></td>
+                <td style={{padding:"5px 6px",fontSize:9,color:T.sub}}>{c.stage}</td>
+                <td style={{padding:"5px 6px",fontWeight:600,textAlign:"right",color:daysBeyond>0?T.red:T.green}}>{daysBeyond>0?"+"+daysBeyond+"d":"Within FP"}</td>
+                <td style={{padding:"5px 6px",fontWeight:600,textAlign:"right",color:daily>0?T.red:T.sub}}>{daily>0?fmt(daily)+"/d":"—"}</td>
+                <td style={{padding:"5px 6px",fontWeight:600,textAlign:"right"}}>{fmt(c.cost)}</td>
+                <td style={{padding:"5px 6px",borderRadius:"0 6px 6px 0",textAlign:"right"}}><SolidBadge color={c.risk>=75?T.red:c.risk>=50?T.amber:T.green}>{c.risk>=75?"High":c.risk>=50?"Medium":"Low"}</SolidBadge></td>
+              </tr>;
+            })}
             </tbody>
           </table>
         )}
